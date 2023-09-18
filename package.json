@@ -1,0 +1,14 @@
+{
+  "name": "ds-extensions-debuggus",
+  "version": "1.0.0",
+  "description": "This repo contains the Downstream extensions for Debuggus, the social deduction game built in Downstream.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@playmint/ds-cli": "^0.0.10"
+  }
+}

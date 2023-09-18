@@ -1,0 +1,39 @@
+---
+kind: Item
+spec:
+  name: Tonk 
+  icon: 19-200
+  plugin:
+    file: ./Tonk.js
+  goo:
+    red: 0
+    green: 0
+    blue: 2
+  stackable: false
+
+---
+kind: BuildingKind
+spec:
+  name: Debug Us Tower 
+  description: "Create a tonk to help the debugger find all buggy players — or get bugged and corrupt others!"
+  category: factory
+  model: 01-08
+  contract:
+    file: ./DebugusTower.sol
+  plugin:
+    file: ./DebugusTower.js
+  materials:
+    - name: Green Goo
+      quantity: 25
+    - name: Blue Goo
+      quantity: 25
+    - name: Red Goo
+      quantity: 25
+  inputs:
+    - name: Blue Goo
+      quantity: 4
+    - name: Red Goo
+      quantity: 4
+  outputs:
+    - name: Tonk 
+      quantity: 1

@@ -1,0 +1,25 @@
+kind: BuildingKind
+spec:
+  name: Debug Us Depot 
+  description: "Players must walk to these buildings to complete their debug tasks"
+  category: factory
+  model: 01-01
+  contract:
+    file: ./DebugusDepot.sol
+  plugin:
+    file: ./DebugusDepot.js
+  materials:
+    - name: Green Goo
+      quantity: 25
+    - name: Blue Goo
+      quantity: 25
+    - name: Red Goo
+      quantity: 25
+  inputs:
+    - name: Blue Goo
+      quantity: 4
+    - name: Red Goo
+      quantity: 4
+  outputs:
+    - name: Tonk 
+      quantity: 1
