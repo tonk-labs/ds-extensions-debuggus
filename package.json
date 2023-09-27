@@ -9,6 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@playmint/ds-cli": "^0.0.10"
+    "@playmint/ds-cli": "^0.0.11"
   }
 }
