@@ -33,9 +33,18 @@ async function isInGame(gameId, playerId) {
     }
 }
 
-async function registerPlayer(id, hash, secret) {
+async function registerPlayer(id, mobileUnitId, displayName, hash, secret) {
+    var raw = JSON.stringify({
+        id: id, 
+        mobile_unit_id: mobileUnitId,
+        display_name: displayName 
+    })
     var requestOptions = {
         method: 'POST',
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: raw
       };
       
       try {
@@ -47,7 +56,7 @@ async function registerPlayer(id, hash, secret) {
       }
 }
 
-function formatHtml(status) {
+function formatHtml(status, game) {
     if (status == "SPECTATOR") {
         return `
             <p> Please go to the debug us tower to join the game </p>
@@ -57,19 +66,29 @@ function formatHtml(status) {
             <h3>${status}</h3>
             <p> Waiting for the game to start... </p>
         `
+    } else if (status == "Tasks") {
+        return `
+            <h3> Complete the Task </h3>
+            <h3>Time remaining: ${game.time.timer}</h3>
+            <br/>
+            <p> Objective: Perform slam poetry at the hex dump </p>
+        `
     } else {
         return "";
     } 
 }
 
-export default async function update({ selected, player }) {
+export default async function update(params) {
+    console.log(params);
+    const { selected, player } = params;
     const { mobileUnit } = selected || {};
 
     game = await getGame();
     tonkPlayer = await getPlayer(player.id);
 
     if (tonkPlayer.id == "") {
-        await registerPlayer(player.id);
+        let nameField = player.mobileUnits[0].name || { value: `UNIT ${player.mobileUnits[0].key.replace("0x", "")}`}
+        await registerPlayer(player.id, player.mobileUnits[0].id, nameField.value.toUpperCase());
     }
 
     let has_joined = await isInGame(game.id, player.id);
@@ -99,7 +118,7 @@ export default async function update({ selected, player }) {
                         html: `
                             <h1> Debug Us </h1>
                             <br/>
-                            ${formatHtml(status)}
+                            ${formatHtml(status, game)}
                         `,
                         // buttons: [
                         //     {

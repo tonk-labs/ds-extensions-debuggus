@@ -1,0 +1,23 @@
+kind: BuildingKind
+spec:
+  name: Breakpoint Vista 
+  description: "Debugger: set a breakpoint and get a better view"
+  category: factory
+  model: 07-02
+  contract:
+    file: ./BreakpointVista.sol
+  plugin:
+    file: ./BreakpointVista.js
+  materials:
+    - name: Green Goo
+      quantity: 10
+    - name: Blue Goo
+      quantity: 10
+    - name: Red Goo
+      quantity: 10
+  inputs: 
+    - name: Paperclip
+      quantity: 1
+  outputs: 
+    - name: Tonk 
+      quantity: 1

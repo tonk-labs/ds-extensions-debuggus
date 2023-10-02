@@ -19,9 +19,9 @@ spec:
   category: factory
   model: 01-08
   contract:
-    file: ./DebugusTower.sol
+    file: ./DebugUsTower.sol
   plugin:
-    file: ./DebugusTower.js
+    file: ./DebugUsTower.js
   materials:
     - name: Green Goo
       quantity: 25

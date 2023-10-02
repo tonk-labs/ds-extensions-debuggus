@@ -1,0 +1,23 @@
+kind: BuildingKind
+spec:
+  name: Loggers Retreat
+  description: "Debugger: log file huts for loggers burning log files"
+  category: factory
+  model: 08-08
+  contract:
+    file: ./LoggersRetreat.sol
+  plugin:
+    file: ./LoggersRetreat.js
+  materials:
+    - name: Green Goo
+      quantity: 10
+    - name: Blue Goo
+      quantity: 10
+    - name: Red Goo
+      quantity: 10
+  inputs: 
+    - name: Paperclip
+      quantity: 1
+  outputs: 
+    - name: Tonk 
+      quantity: 1
