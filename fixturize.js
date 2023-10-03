@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const process = require('process');
 
 // Replace ~ with the actual home directory
 const homeDirectory = os.homedir();
@@ -10,7 +11,7 @@ const sources = [
     './DebugusTower',
     './Depots/BreakpointVista',
     './Depots/HexDump',
-    './Depots/LoggerRetreat'
+    './Depots/LoggersRetreat'
 ];
 const destination = path.join(homeDirectory, 'Workspace/ds/contracts/src/fixtures/debug-us/');
 
@@ -48,6 +49,7 @@ async function main() {
     for (const source of sources) {
         await copyFilesFromDirectory(source);
     }
+    await copyFile(path.join(process.cwd(),'map.yaml'), path.join(destination, 'map.yaml'));
     console.log("Files copied successfully!");
 }
 

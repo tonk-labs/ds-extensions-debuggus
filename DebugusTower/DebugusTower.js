@@ -5,6 +5,8 @@ let game, players;
 
 let wants_to_join = false;
 let wants_to_start = false;
+let cast_vote = false;
+let saved_values = null;
 
 async function getGame() {
     try {
@@ -79,9 +81,20 @@ async function requestJoin(gameId, playerId, secretKey) {
     }
 }
 
+async function getRoundResult() {
+    //TODO implement 
+    try {
+        let response = await fetch(`http://localhost:8082/game/result`)
+        let text = await response.text();
+        return JSON.parse(text);
+    } catch (e) {
+        console.log(e);
+    }
+}
+
 export default async function update(params) {
     const { selected, player } = params; 
-    console.log(params);
+    // console.log(params);
     const { tiles, mobileUnit } = selected || {};
     const selectedTile = tiles && tiles.length === 1 ? tiles[0] : undefined;
     const selectedBuilding = selectedTile && selectedTile.building ? selectedTile.building : undefined;
@@ -89,6 +102,7 @@ export default async function update(params) {
     const inputBag = selectedBuilding && selectedBuilding.bags.find(b => b.key == 0).bag;
     const canCraftTonk = inputBag && inputBag.slots.length == 2 && inputBag.slots.every(slot => slot.balance > 0) && selectedEngineer;
     console.log("building id: ", selectedBuilding.id);
+    console.log("selected coords: ", selectedTile.coords);
     // console.log(player);
 
     game = await getGame();
@@ -107,7 +121,7 @@ export default async function update(params) {
     if (wants_to_start) {
         try {
             await requestStart()
-            wants_to_join = false;
+            wants_to_start = false;
         } catch (e) {
             console.log(e)
         }
@@ -137,7 +151,19 @@ export default async function update(params) {
             },
         );
 
-        ds.log('Enjoy your drink!');
+        ds.log('Tonk!');
+    };
+
+    if (cast_vote) {
+        console.log(saved_values);
+        cast_vote = false;
+        saved_values = null;
+    }
+
+
+    const onCastVote = (values) => {
+        cast_vote = true;
+        saved_values = values;
     };
 
     const has_tonk = player.mobileUnits[0].bags[0].bag.slots.findIndex(b => b.item && b.item.name.value == 'Tonk') >= 0 || player.mobileUnits[0].bags[1].bag.slots.findIndex(b => b.item && b.item.name.value == 'Tonk') >= 0
@@ -145,7 +171,8 @@ export default async function update(params) {
 
     let html = ``;
     let buttons = [];
-    if (game.status == "Lobby") {
+    let submit;
+    if (game.status == "Lobb") {
         html =` 
             <p> Number of players waiting in the lobby: ${players.length} </p>
             <br/>
@@ -160,7 +187,7 @@ export default async function update(params) {
         }
     } else if (game.status == "Tasks") {
         html = `
-            <h3> Complete Tasks </h3>
+            <h3> Complete the tasks </h3>
             <br/>
             <h3> Time remaining: ${game.time.timer} </h3>
             <br/>
@@ -168,37 +195,66 @@ export default async function update(params) {
             `;
 
     } else if (game.status == "TaskResult") {
-        // fetch round result
+        let roundResult = await getRoundResult(game);
         html = `
-            <h3> Complete Tasks </h3>
+            <h3> Tasks round complete </h3>
             <br/>
-            <p> Players have been assigned their tasks </p>
+            <p> These players have been bugged out of the game </p>
+            ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.display_name}</p></br>`)}
+            <p> Number of tasks completed: ${roundResult.tasks_completed ? roundResult.tasks_completed.length : 0}</p>
             <br/>
-            `;
+        `;
 
-    } else if (game.status == "Vote") {
+    } else if (game.status == "Lobby") {
         html = `
-            <h3> Complete Tasks </h3>
+            <h3> Voting in session </h3>
             <br/>
-            <p> Players have been assigned their tasks </p>
+            <p> Cast your vote to identify and eliminate the bugs </p>
+            <br />
+            <label>VOTE</label>
+            <div>
+            <select name="vote" style="width: 100%">
             `;
+            // values will be returned as {vote: id}
+        html += players.map((p) => {
+            return `<option value=${p.id}>${p.display_name}</option>`;
+        });
+        html += "</select>"
+        html += `
+            </div>
+            <br/>
+            <div>
+                <button type="submit" style="width:100%; padding:5px; border-radius: 10px;">Cast Vote</button>
+            </div>
+        `
+        submit = onCastVote;
         //add dropdown with player names
         //then a vote button
 
     } else if (game.status == "VoteResult") {
         // fetch round result
+        let roundResult = await getRoundResult(game);
         html = `
-            <h3> Complete Tasks </h3>
+            <h3> Voting Results </h3>
             <br/>
-            <p> Players have been assigned their tasks </p>
-            `;
+            <p> This player has been eliminated: ${roundResult.eliminated ? roundResult.eliminated[0].display_name : "No one!"} </p>
+        `;
 
     } else if (game.status == "End") {
         // display the names of the winners
+        html = `
+            <h3> Game Over! </h3>
+            <br/>
+            <p> Winning players are: </p> <br/>
+            ${players.map(p => `<p>${p.display_name}</p><br/>`)}
+        `;
     }
 
     if (game.status == "GameServerDown") {
         // Display error about game server
+        html = `
+            <p>The gods of debug us require a sacrifice to continue playing this game<p>
+        `;
     }
 
     if (!has_tonk) {
@@ -220,7 +276,8 @@ export default async function update(params) {
                     id: 'default',
                     type: 'inline',
                     html: html,
-                    buttons: buttons
+                    buttons: buttons,
+                    submit: submit
                 }],
             },
         ],

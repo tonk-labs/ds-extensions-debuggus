@@ -1,0 +1,23 @@
+---
+kind: Building
+spec:
+  name: Debug Us Tower
+  location: [1, 0, -1]
+
+---
+kind: Building
+spec:
+  name: Loggers Retreat
+  location: [5, 2, -7]
+
+---
+kind: Building
+spec:
+  name: Breakpoint Vista
+  location: [-4, -3, 7]
+
+---
+kind: Building
+spec:
+  name: Hex Dump 
+  location: [-8, 10, -2]
