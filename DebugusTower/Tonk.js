@@ -81,7 +81,7 @@ async function postTask(task, player) {
       };
       
       try {
-        let response = await fetch(`http://localhost:8082/action?player_id=${player.id}&secret_key=fff`, requestOptions)
+        let response = await fetch(`http://localhost:8082/task?player_id=${player.id}&secret_key=fff`, requestOptions)
       } catch (e) {
         console.log(e);
       }
@@ -90,7 +90,8 @@ async function postTask(task, player) {
 async function postAction(target, game, player) {
     var raw = JSON.stringify({
         poison_target: target,
-        round: game.time.round
+        round: game.time.round,
+        interrupted_task: false 
     })
     var requestOptions = {
         method: 'POST',
@@ -114,7 +115,7 @@ function formatHtml(status, game, player, task) {
         `
     } else if (status == "Lobby") {
         return `
-            <h3>${status}</h3>
+            <h3>Lobby</h3>
             <p> Waiting for the game to start... </p>
         `
     } else if (status == "Tasks") {
@@ -124,7 +125,7 @@ function formatHtml(status, game, player, task) {
                 <h3>Time remaining: ${game.time.timer}</h3>
                 <br/>
                 ${player.used_action ? (
-                    `<p> Ok, chill, chill, you did just bug a player. Act normal!`
+                    `<p> Ok, chill, chill, you just bugged someone. Try to act normal!`
                 ) : (
                     `<p> Objective: ${task.destination.task_message} </p>`
                 )}
@@ -134,38 +135,45 @@ function formatHtml(status, game, player, task) {
                 <h3> Complete the Task </h3>
                 <h3>Time remaining: ${game.time.timer}</h3>
                 <br/>
-                <p> Objective: ${task.destination.task_message} </p>
+                ${task.complete ? (
+                    `<p> Objective Complete! Return to home base and wait for the results. </p>`
+                ) : (
+                    `<p> Objective: ${task.destination.task_message} </p>`
+                )}
             `
         }
     } else if (status == "TaskResult") {
         return `
             <h3> Tasks complete </h3>
+            <h3>Time remaining: ${game.time.timer}</h3>
             <br/>
             <p> Return back to the tower to see results! </p>
         `;
     } else if (status == "Vote") {
         return `
             <h3> Vote </h3>
+            <h3>Time remaining: ${game.time.timer}</h3>
             <br/>
             <p> Go to the tower and submit your vote! </p>
         `;
     } else if (status == "VoteResult") {
         return `
             <h3> Votes counted </h3>
+            <h3>Time remaining: ${game.time.timer}</h3>
             <br/>
-            <p> The tower is announcing the result. </p>
+            <p> The tower is announcing the result </p>
         `;
     } else if (status == "End") {
         return `
             <h3> Game Over </h3>
+            <h3>Time until next game lobby: ${game.time.timer}</h3>
             <br/>
-            <p> Victory! Return to the tower to play again. </p>
+            <p> Victory! Return to the tower to play again </p>
         `;
     }
 }
 
 export default async function update(params) {
-    // console.log(params);
     const { selected, player } = params;
     const { mobileUnit } = selected || {};
 
@@ -174,9 +182,12 @@ export default async function update(params) {
     let task = "";
     let buttons;
 
-    const bugOut = (id) => {
+    const bugOut = (id, displayName) => {
         bugging = true;
-        player_to_bug = id;
+        player_to_bug = {
+            id,
+            display_name: displayName
+        }
     }
 
     const completeTask = () => {
@@ -195,19 +206,18 @@ export default async function update(params) {
             buttons = [];
             tonkPlayer.nearby_players.forEach((p) => {
                 buttons.push(
-                    { text: `Bug ${p.display_name}`, type: 'action', action: bugOut.bind(this, p.id), disabled: false }
+                    { text: `Bug ${p.display_name}`, type: 'action', action: bugOut.bind(this, p.id, p.display_name), disabled: bugging }
                 )
 
             });
-            buttons = [
-            ]
         } else {
             if (complete_task) {
                 await postTask(task, tonkPlayer);
+                complete_task = false;
             }
             if (tonkPlayer.nearby_buildings.findIndex((b) => b.id == task.destination.id) >= 0 && !task.complete) {
                 buttons = [
-                    { text: 'Complete task', type: 'action', action: completeTask, disabled: false }
+                    { text: 'Complete task', type: 'action', action: completeTask, disabled: complete_task }
                 ];
             }
         }
