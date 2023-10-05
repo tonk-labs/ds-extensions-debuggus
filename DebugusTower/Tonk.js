@@ -5,9 +5,12 @@ let bugging = false;
 let player_to_bug = null;
 let complete_task = false;
 
+// let ENDPOINT = "http://localhost:8082"
+let ENDPOINT = "https://ds-api.tonk.gg"
+
 async function getGame() {
     try {
-        let response = await fetch("http://localhost:8082/game");
+        let response = await fetch(`${ENDPOINT}/game`);
         let raw = await response.text();
         return JSON.parse(raw);
     } catch (e) {
@@ -18,7 +21,7 @@ async function getGame() {
 
 async function getPlayer(id) {
     try {
-        let response = await fetch(`http://localhost:8082/player/${id}`)
+        let response = await fetch(`${ENDPOINT}/player/${id}`)
         let raw = await response.text();
         return JSON.parse(raw);
     } catch (e) {
@@ -28,7 +31,7 @@ async function getPlayer(id) {
 
 async function isInGame(gameId, playerId) {
     try {
-        let response = await fetch(`http://localhost:8082/game/${gameId}/player`);
+        let response = await fetch(`${ENDPOINT}/game/${gameId}/player`);
         let raw = await response.text();
         let players = JSON.parse(raw);
         return players.findIndex((p) => p.id == playerId) !== -1;
@@ -52,8 +55,8 @@ async function registerPlayer(id, mobileUnitId, displayName, hash, secret) {
       };
       
       try {
-        // let response = await fetch(`http://localhost:8082/player/${id}?secret_key=${secret}&onchain_hash=${hash}`, requestOptions)
-        let response = await fetch(`http://localhost:8082/player/${id}`, requestOptions)
+        // let response = await fetch(`${ENDPOINT}/player/${id}?secret_key=${secret}&onchain_hash=${hash}`, requestOptions)
+        let response = await fetch(`${ENDPOINT}/player/${id}`, requestOptions)
         // let text = await response.text();
       } catch (e) {
         console.log(e);
@@ -62,7 +65,7 @@ async function registerPlayer(id, mobileUnitId, displayName, hash, secret) {
 
 async function getTask(player) {
     try {
-        let response = await fetch(`http://localhost:8082/task?player_id=${player.id}&secret_key=fff`);
+        let response = await fetch(`${ENDPOINT}/task?player_id=${player.id}&secret_key=fff`);
         let text = await response.text();
         return JSON.parse(text);
     } catch (e) {
@@ -81,7 +84,7 @@ async function postTask(task, player) {
       };
       
       try {
-        let response = await fetch(`http://localhost:8082/task?player_id=${player.id}&secret_key=fff`, requestOptions)
+        let response = await fetch(`${ENDPOINT}/task?player_id=${player.id}&secret_key=fff`, requestOptions)
       } catch (e) {
         console.log(e);
       }
@@ -102,7 +105,7 @@ async function postAction(target, game, player) {
       };
       
       try {
-        let response = await fetch(`http://localhost:8082/action?player_id=${player.id}&secret_key=fff`, requestOptions)
+        let response = await fetch(`${ENDPOINT}/action?player_id=${player.id}&secret_key=fff`, requestOptions)
       } catch (e) {
         console.log(e);
       }

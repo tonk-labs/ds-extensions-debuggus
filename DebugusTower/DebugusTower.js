@@ -8,9 +8,12 @@ let wants_to_start = false;
 let cast_vote = false;
 let saved_vote_id = null;
 
+// let ENDPOINT = "http://localhost:8082"
+let ENDPOINT = "https://ds-api.tonk.gg"
+
 async function getGame() {
     try {
-        let response = await fetch("http://localhost:8082/game");
+        let response = await fetch(`${ENDPOINT}/game`);
         let raw = await response.text();
         return JSON.parse(raw);
     } catch (e) {
@@ -28,7 +31,7 @@ async function getPlayers(gameId) {
     // .catch(error => console.log('error', error));
 
     try {
-        let response = await fetch(`http://localhost:8082/game/${gameId}/player`);
+        let response = await fetch(`${ENDPOINT}/game/${gameId}/player`);
         let raw = await response.text();
         return JSON.parse(raw);
     } catch (e) {
@@ -46,7 +49,7 @@ async function requestStart() {
     };
 
     try {
-        let response = await fetch(`http://localhost:8082/game`, requestOptions)
+        let response = await fetch(`${ENDPOINT}/game`, requestOptions)
         let text = await response.text();
         console.log(text);
     } catch (e) {
@@ -73,7 +76,7 @@ async function requestJoin(gameId, playerId, secretKey) {
     };
 
     try {
-        let response = await fetch(`http://localhost:8082/game/${gameId}/player`, requestOptions)
+        let response = await fetch(`${ENDPOINT}/game/${gameId}/player`, requestOptions)
         let text = await response.text();
         console.log(text);
     } catch (e) {
@@ -84,7 +87,7 @@ async function requestJoin(gameId, playerId, secretKey) {
 async function getRoundResult() {
     //TODO implement 
     try {
-        let response = await fetch(`http://localhost:8082/game/result`)
+        let response = await fetch(`${ENDPOINT}/game/result`)
         let text = await response.text();
         return JSON.parse(text);
     } catch (e) {
@@ -110,7 +113,7 @@ async function sendVote(candidateId, player) {
     };
 
     try {
-        let response = await fetch(`http://localhost:8082/vote?player_id=${player.id}&secret_key=fff`, requestOptions)
+        let response = await fetch(`${ENDPOINT}/vote?player_id=${player.id}&secret_key=fff`, requestOptions)
         let text = await response.text();
         console.log(text);
     } catch (e) {
@@ -120,7 +123,7 @@ async function sendVote(candidateId, player) {
 
 async function getPlayer(id) {
     try {
-        let response = await fetch(`http://localhost:8082/player/${id}`)
+        let response = await fetch(`${ENDPOINT}/player/${id}`)
         let raw = await response.text();
         return JSON.parse(raw);
     } catch (e) {
@@ -137,8 +140,8 @@ export default async function update(params) {
     const selectedEngineer = mobileUnit;
     const inputBag = selectedBuilding && selectedBuilding.bags.find(b => b.key == 0).bag;
     const canCraftTonk = inputBag && inputBag.slots.length == 2 && inputBag.slots.every(slot => slot.balance > 0) && selectedEngineer;
-    // console.log("building id: ", selectedBuilding.id);
-    // console.log("selected coords: ", selectedTile.coords);
+    console.log("building id: ", selectedBuilding.id);
+    console.log("selected coords: ", selectedTile.coords);
     // console.log(player);
 
     game = await getGame();
