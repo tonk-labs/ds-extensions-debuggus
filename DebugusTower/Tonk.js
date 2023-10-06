@@ -205,7 +205,7 @@ export default async function update(params) {
 
     if (game.status == "Tasks") {
         task = await getTask(tonkPlayer);
-        if (tonkPlayer.role == "Bugged" && tonkPlayer.nearby_players.length != 0 && !tonkPlayer.used_action) {
+        if (tonkPlayer.role == "Bugged" && tonkPlayer.nearby_players && tonkPlayer.nearby_players.length != 0 && !tonkPlayer.used_action) {
             buttons = [];
             tonkPlayer.nearby_players.forEach((p) => {
                 buttons.push(
@@ -218,7 +218,7 @@ export default async function update(params) {
                 await postTask(task, tonkPlayer);
                 complete_task = false;
             }
-            if (tonkPlayer.nearby_buildings.findIndex((b) => b.id == task.destination.id) >= 0 && !task.complete) {
+            if (tonkPlayer.nearby_buildings && tonkPlayer.nearby_buildings.findIndex((b) => b.id == task.destination.id) >= 0 && !task.complete) {
                 buttons = [
                     { text: 'Complete task', type: 'action', action: completeTask, disabled: complete_task }
                 ];
