@@ -5,8 +5,10 @@ export default async function update({ selected }) {
     const selectedTile = tiles && tiles.length === 1 ? tiles[0] : undefined;
     const selectedBuilding = selectedTile && selectedTile.building ? selectedTile.building : undefined;
     const selectedEngineer = mobileUnit;
-    console.log("building id", selectedBuilding.id);
-    console.log("selected coords: ", selectedTile.coords);
+    if (!!selectedBuilding) {
+        console.log("building id", selectedBuilding.id);
+        console.log("selected coords: ", selectedTile.coords);
+    }
     // const inputBag = selectedBuilding && selectedBuilding.bags.find(b => b.key == 0).bag;
     // const canPourDrink = inputBag && inputBag.slots.length == 2 && inputBag.slots.every(slot => slot.balance > 0) && selectedEngineer;
 

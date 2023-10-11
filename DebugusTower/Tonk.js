@@ -5,8 +5,8 @@ let bugging = false;
 let player_to_bug = null;
 let complete_task = false;
 
-// let ENDPOINT = "http://localhost:8082"
-let ENDPOINT = "https://ds-api.tonk.gg"
+let ENDPOINT = "http://localhost:8082"
+// let ENDPOINT = "https://ds-api.tonk.gg"
 
 async function getGame() {
     try {
@@ -29,16 +29,22 @@ async function getPlayer(id) {
     }
 }
 
-async function isInGame(gameId, playerId) {
-    try {
-        let response = await fetch(`${ENDPOINT}/game/${gameId}/player`);
-        let raw = await response.text();
-        let players = JSON.parse(raw);
-        return players.findIndex((p) => p.id == playerId) !== -1;
-    } catch (e) {
+function isInGame(players) {
+    return players.findIndex((p) => p.id == playerId) !== -1;
+}
 
+async function getPlayers(gameId, playerId) {
+    try {
+        let response = await fetch(`${ENDPOINT}/game/${gameId}/player?player_id=${playerId}`);
+        let raw = await response.text();
+        return JSON.parse(raw);
+    } catch (e) {
+        console.error(e);
+        return [];
     }
 }
+
+
 
 async function registerPlayer(id, mobileUnitId, displayName, hash, secret) {
     var raw = JSON.stringify({
@@ -111,7 +117,24 @@ async function postAction(target, game, player) {
       }
 }
 
-function formatHtml(status, game, player, task) {
+function formatHtml(status, game, player, players, task) {
+    let the_other_bugs = []; 
+    if (players.length > 0 && players[0].role) {
+        players.map((p) => {
+            if (p.role == "Bugged" && p.id !== player.id) {
+                the_other_bugs.push(p);
+            }
+        })
+    }
+    let the_other_bugs_html = `<p> Pssst, the other bugs are: 
+        ${the_other_bugs.map((bugs,i) => {
+            if (i == 0) {
+                return bugs.display_name;
+            } else {
+                return ", " + bugs.display_name;
+            }
+        })}</p>`;
+
     if (status == "SPECTATOR") {
         return `
             <p> Please go to the debug us tower to join the game </p>
@@ -122,11 +145,13 @@ function formatHtml(status, game, player, task) {
             <p> Waiting for the game to start... </p>
         `
     } else if (status == "Tasks") {
-        if (player.role == "Bugged") {
+        if (player.role && player.role == "Bugged") {
             return `
                 <h3> Complete the Task </h3>
                 <h3>Time remaining: ${game.time.timer}</h3>
                 <br/>
+                ${the_other_bugs_html}
+                </br>
                 ${player.used_action ? (
                     `<p> Ok, chill, chill, you just bugged someone. Try to act normal!`
                 ) : (
@@ -149,6 +174,7 @@ function formatHtml(status, game, player, task) {
         return `
             <h3> Tasks complete </h3>
             <h3>Time remaining: ${game.time.timer}</h3>
+            ${player.role && player.role == "Bugged" ? `${the_other_bugs_html}</br>` : ""}
             <br/>
             <p> Return back to the tower to see results! </p>
         `;
@@ -157,12 +183,14 @@ function formatHtml(status, game, player, task) {
             <h3> Vote </h3>
             <h3>Time remaining: ${game.time.timer}</h3>
             <br/>
+            ${player.role && player.role == "Bugged" ? `${the_other_bugs_html}</br>` : ""}
             <p> Go to the tower and submit your vote! </p>
         `;
     } else if (status == "VoteResult") {
         return `
             <h3> Votes counted </h3>
             <h3>Time remaining: ${game.time.timer}</h3>
+            ${player.role && player.role == "Bugged" ? `${the_other_bugs_html}</br>` : ""}
             <br/>
             <p> The tower is announcing the result </p>
         `;
@@ -203,7 +231,8 @@ export default async function update(params) {
         player_to_bug = null;
     }
 
-    let has_joined = await isInGame(game.id, player.id);
+    let players = await getPlayers(game.id, player.id);
+    let has_joined = isInGame(players);
     let status = has_joined ? game.status : "SPECTATOR"
 
     let nameField = player.mobileUnits[0].name || { value: `UNIT ${player.mobileUnits[0].key.replace("0x", "").toUpperCase()}`}
@@ -249,7 +278,7 @@ export default async function update(params) {
                         html: `
                             <h1> Debug Us </h1>
                             <br/>
-                            ${formatHtml(status, game, tonkPlayer, task)}
+                            ${formatHtml(status, game, tonkPlayer, players, task)}
                         `,
                         buttons
                     },

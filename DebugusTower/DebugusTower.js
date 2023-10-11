@@ -8,8 +8,8 @@ let wants_to_start = false;
 let cast_vote = false;
 let saved_vote_id = null;
 
-// let ENDPOINT = "http://localhost:8082"
-let ENDPOINT = "https://ds-api.tonk.gg"
+let ENDPOINT = "http://localhost:8082"
+// let ENDPOINT = "https://ds-api.tonk.gg"
 
 async function getGame() {
     try {
@@ -24,14 +24,14 @@ async function getGame() {
     }
 }
 
-async function getPlayers(gameId) {
+async function getPlayers(gameId, playerId) {
     // fetch("localhost:8082/game/9d19e34892d546bea2fbeba08be9e573/player", requestOptions)
     // .then(response => response.text())
     // .then(result => console.log(result))
     // .catch(error => console.log('error', error));
 
     try {
-        let response = await fetch(`${ENDPOINT}/game/${gameId}/player`);
+        let response = await fetch(`${ENDPOINT}/game/${gameId}/player?player_id=${playerId}`);
         let raw = await response.text();
         return JSON.parse(raw);
     } catch (e) {
@@ -140,12 +140,14 @@ export default async function update(params) {
     const selectedEngineer = mobileUnit;
     const inputBag = selectedBuilding && selectedBuilding.bags.find(b => b.key == 0).bag;
     const canCraftTonk = inputBag && inputBag.slots.length == 2 && inputBag.slots.every(slot => slot.balance > 0) && selectedEngineer;
-    console.log("building id: ", selectedBuilding.id);
-    console.log("selected coords: ", selectedTile.coords);
+    if (!!selectedBuilding) {
+        console.log("building id: ", selectedBuilding.id);
+        console.log("selected coords: ", selectedTile.coords);
+    }
     // console.log(player);
 
     game = await getGame();
-    players = await getPlayers(game.id);
+    players = await getPlayers(game.id, player.id);
 
 
     if (wants_to_join) {
@@ -206,7 +208,7 @@ export default async function update(params) {
     };
 
     const has_tonk = player.mobileUnits[0].bags[0].bag.slots.findIndex(b => b.item && b.item.name.value == 'Tonk') >= 0 || player.mobileUnits[0].bags[1].bag.slots.findIndex(b => b.item && b.item.name.value == 'Tonk') >= 0
-    const player_is_in_game = players.findIndex(p => p.id == player.id) >= 0;
+    const player_is_in_game = players ? players.findIndex(p => p.id == player.id) >= 0 : [];
 
     let html = ``;
     let buttons = [];
