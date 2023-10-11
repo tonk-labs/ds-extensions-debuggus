@@ -203,7 +203,17 @@ export default async function update(params) {
         player_to_bug = null;
     }
 
-    if (game.status == "Tasks") {
+    let has_joined = await isInGame(game.id, player.id);
+    let status = has_joined ? game.status : "SPECTATOR"
+
+    let nameField = player.mobileUnits[0].name || { value: `UNIT ${player.mobileUnits[0].key.replace("0x", "").toUpperCase()}`}
+    if (tonkPlayer.id == "") {
+        await registerPlayer(player.id, player.mobileUnits[0].id, nameField.value.toUpperCase());
+    } else if (tonkPlayer.display_name != nameField.value) {
+        await registerPlayer(player.id, player.mobileUnits[0].id, nameField.value.toUpperCase());
+    }
+
+    if (status == "Tasks") {
         task = await getTask(tonkPlayer);
         if (tonkPlayer.role == "Bugged" && tonkPlayer.nearby_players && tonkPlayer.nearby_players.length != 0 && !tonkPlayer.used_action) {
             buttons = [];
@@ -225,16 +235,6 @@ export default async function update(params) {
             }
         }
     }
-
-    let nameField = player.mobileUnits[0].name || { value: `UNIT ${player.mobileUnits[0].key.replace("0x", "").toUpperCase()}`}
-    if (tonkPlayer.id == "") {
-        await registerPlayer(player.id, player.mobileUnits[0].id, nameField.value.toUpperCase());
-    } else if (tonkPlayer.display_name != nameField.value) {
-        await registerPlayer(player.id, player.mobileUnits[0].id, nameField.value.toUpperCase());
-    }
-
-    let has_joined = await isInGame(game.id, player.id);
-    let status = has_joined ? game.status : "SPECTATOR"
 
     return {
         version: 1,

@@ -196,7 +196,7 @@ export default async function update(params) {
     if (cast_vote) {
         await sendVote(saved_vote_id, player);
         cast_vote = false;
-        saved_values = null;
+        saved_vote_id = null;
     }
 
 
@@ -221,7 +221,7 @@ export default async function update(params) {
             if (!player_is_in_game && !!has_tonk && game.status == "Lobby") {
             buttons.push({ text: 'Join Game', type: 'action', action: joinGame, disabled: !has_tonk });
         }
-        if (players.length >= MIN_NUMBER_PLAYERS) {
+        if (players.length >= MIN_NUMBER_PLAYERS && player_is_in_game) {
             buttons.push({ text: 'Start Game', type: 'action', action: startGame, disabled: !has_tonk || !player_is_in_game });
         }
     } else if (game.status == "Tasks") {
@@ -254,32 +254,34 @@ export default async function update(params) {
             <label>VOTE</label>
             `;
         
-        if (tonkPlayer.used_action) {
-            html += `
-                <p> You have cast your vote </p>
-            `
-        } else {
-            // values will be returned as {vote: id}
-            html += `
-            <div>
-            <select name="vote" style="width: 100%">
+        if (player_is_in_game) {
+            if (tonkPlayer.used_action) {
+                html += `
+                    <p> You have cast your vote </p>
                 `
-            html += players.map((p) => {
-                if (p.id == tonkPlayer.id) {
-                    return ""
-                } else {
-                    return `<option value=${p.id}>${p.display_name}</option>`;
-                }
-            });
-            html += "</select>"
-            html += `
-                </div>
-                <br/>
+            } else {
+                // values will be returned as {vote: id}
+                html += `
                 <div>
-                    <button type="submit" style="width:100%; padding:5px; border-radius: 10px;">Cast Vote</button>
-                </div>
-            `
-            submit = onCastVote;
+                <select name="vote" style="width: 100%">
+                    `
+                html += players.map((p) => {
+                    if (p.id == tonkPlayer.id) {
+                        return ""
+                    } else {
+                        return `<option value=${p.id}>${p.display_name}</option>`;
+                    }
+                });
+                html += "</select>"
+                html += `
+                    </div>
+                    <br/>
+                    <div>
+                        <button type="submit" style="width:100%; padding:5px; border-radius: 10px;">Cast Vote</button>
+                    </div>
+                `
+                submit = onCastVote;
+            }
         }
     } else if (game.status == "VoteResult") {
         // fetch round result
