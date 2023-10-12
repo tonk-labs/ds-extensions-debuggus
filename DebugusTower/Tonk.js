@@ -155,7 +155,15 @@ function formatHtml(status, game, player, players, task) {
                 ${player.used_action ? (
                     `<p> Ok, chill, chill, you just bugged someone. Try to act normal!`
                 ) : (
-                    `<p> Objective: ${task.destination.task_message} </p>`
+                    `<p> Objective: ${task.destination.task_message} </p></br>${
+                        player.immune ? (
+                            "<p> Your bugging powers are useless within 3 tiles of the Tower </p> "
+                        ) : (
+                            player.nearby_players && player.nearby_players.length == 0 ? (
+                                `<p> There are no nearby players to bug. You must be within 2 tiles to bug someone. </p>`
+                            ) : ""
+                        )
+                    }`
                 )}
             `
         } else {
