@@ -4,6 +4,8 @@ var game, tonkPlayer;
 let bugging = false;
 let player_to_bug = null;
 let complete_task = false;
+let perform_function = false;
+let first_click_in = true;
 
 let ENDPOINT = "http://localhost:8082"
 // let ENDPOINT = "https://ds-api.tonk.gg"
@@ -29,7 +31,7 @@ async function getPlayer(id) {
     }
 }
 
-function isInGame(players) {
+function isInGame(players, playerId) {
     return players.findIndex((p) => p.id == playerId) !== -1;
 }
 
@@ -126,14 +128,14 @@ function formatHtml(status, game, player, players, task) {
             }
         })
     }
-    let the_other_bugs_html = `<p> Pssst, the other bugs are: 
+    let the_other_bugs_html = the_other_bugs.length > 1 ? `<p> Pssst, the other bugs are: 
         ${the_other_bugs.map((bugs,i) => {
             if (i == 0) {
                 return bugs.display_name;
             } else {
                 return ", " + bugs.display_name;
             }
-        })}</p>`;
+        })}</p>` : "";
 
     if (status == "SPECTATOR") {
         return `
@@ -171,8 +173,12 @@ function formatHtml(status, game, player, players, task) {
                 <h3> Complete the Task </h3>
                 <h3>Time remaining: ${game.time.timer}</h3>
                 <br/>
+                <p> Failure will result in your deletion. Thank you for your cooperation :) </p>
+                <br/>
                 ${task.complete ? (
-                    `<p> Objective Complete! Return to home base and wait for the results. </p>`
+                    `<p> Objective Complete! Take a well-deserved rest until the next round </p>`
+                ) : task.dropped_off ? (
+                    `<p> Objective: Return to the Tower to complete the task! </p>`
                 ) : (
                     `<p> Objective: ${task.destination.task_message} </p>`
                 )}
@@ -190,6 +196,8 @@ function formatHtml(status, game, player, players, task) {
         return `
             <h3> Vote </h3>
             <h3>Time remaining: ${game.time.timer}</h3>
+            <br/>
+            <p> Indecision will result in your deletion. Thank you for your cooperation :) </p>
             <br/>
             ${player.role && player.role == "Bugged" ? `${the_other_bugs_html}</br>` : ""}
             <p> Go to the tower and submit your vote! </p>
@@ -221,6 +229,8 @@ export default async function update(params) {
     let task = "";
     let buttons;
 
+    // console.log(tonkPlayer);
+
     const bugOut = (id, displayName) => {
         bugging = true;
         player_to_bug = {
@@ -233,6 +243,10 @@ export default async function update(params) {
         complete_task = true;
     }
 
+    const performFunction = () => {
+        perform_function = true;
+    }
+
     if (bugging) {
         await postAction(player_to_bug, game, tonkPlayer);
         bugging = false;
@@ -240,12 +254,14 @@ export default async function update(params) {
     }
 
     let players = await getPlayers(game.id, player.id);
-    let has_joined = isInGame(players);
+    let has_joined = isInGame(players, player.id);
     let status = has_joined ? game.status : "SPECTATOR"
 
     let nameField = player.mobileUnits[0].name || { value: `UNIT ${player.mobileUnits[0].key.replace("0x", "").toUpperCase()}`}
-    if (tonkPlayer.id == "") {
+    console.log(player.mobileUnits[0].id);
+    if (tonkPlayer.id == "" || first_click_in) {
         await registerPlayer(player.id, player.mobileUnits[0].id, nameField.value.toUpperCase());
+        first_click_in = false;
     } else if (tonkPlayer.display_name != nameField.value) {
         await registerPlayer(player.id, player.mobileUnits[0].id, nameField.value.toUpperCase());
     }
@@ -255,9 +271,12 @@ export default async function update(params) {
         if (tonkPlayer.role == "Bugged" && tonkPlayer.nearby_players && tonkPlayer.nearby_players.length != 0 && !tonkPlayer.used_action) {
             buttons = [];
             tonkPlayer.nearby_players.forEach((p) => {
-                buttons.push(
-                    { text: `Bug ${p.display_name}`, type: 'action', action: bugOut.bind(this, p.id, p.display_name), disabled: bugging }
-                )
+                console.log("nearby player: ", p);
+                if (!p.immune) {
+                    buttons.push(
+                        { text: `Bug ${p.display_name}`, type: 'action', action: bugOut.bind(this, p.id, p.display_name), disabled: bugging }
+                    )
+                }
 
             });
         } else {
@@ -265,7 +284,16 @@ export default async function update(params) {
                 await postTask(task, tonkPlayer);
                 complete_task = false;
             }
-            if (tonkPlayer.nearby_buildings && tonkPlayer.nearby_buildings.findIndex((b) => b.id == task.destination.id) >= 0 && !task.complete) {
+            if (perform_function) {
+                await postTask(task, tonkPlayer);
+                perform_function = false;
+            }
+            if (tonkPlayer.nearby_buildings && tonkPlayer.nearby_buildings.findIndex((b) => b.id == task.destination.id) >= 0 && !task.dropped_off) {
+                buttons = [
+                    { text: 'Perform function', type: 'action', action: performFunction, disabled: perform_function }
+                ];
+            }
+            if (tonkPlayer.nearby_buildings && tonkPlayer.nearby_buildings.findIndex((b) => b.is_tower) >= 0 && !task.complete && task.dropped_off) {
                 buttons = [
                     { text: 'Complete task', type: 'action', action: completeTask, disabled: complete_task }
                 ];

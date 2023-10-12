@@ -131,6 +131,31 @@ async function getPlayer(id) {
     }
 }
 
+function gameResultToText(result) {
+    if (result == "Thuggery") {
+        return "The bugs have prevailed through sheer thuggery!"
+    } else if (result == "Democracy") {
+        return "Democracy has prevailed over the thuggery of bugs!"
+    } else if (result == "Perfection") {
+        return "The beavers have flawlessly performed their tasks!"
+    } else if (result == "Armageddon") {
+        return "Beavergeddon has descended upon your kind. There is no one left."
+    } else {
+        return "The game is over, but I don't know why!"
+    }
+}
+function reasonToPlaintext(reason) {
+    if (reason == "BuggedOut") {
+        return "got bugged out!"
+    } else if (reason == "VotedOut") {
+        return "has been voted out!"
+    } else if (reason == "Inaction") {
+        return "has failed out!"
+    } else {
+        return "has been swallowed by an error!"
+    }
+}
+
 export default async function update(params) {
     const { selected, player } = params; 
     // console.log(params);
@@ -238,10 +263,11 @@ export default async function update(params) {
     } else if (game.status == "TaskResult") {
         let roundResult = await getRoundResult(game);
         html = `
-            <h3> Tasks round complete </h3>
+            <h3> Tasks round is over! </h3>
             <br/>
-            <p> These players have been bugged out of the game </p>
-            ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.display_name}</p></br>`)}
+            ${roundResult.eliminated && roundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion :)</p><br/>"}
+            ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p.reason)}</p>`)}
+            <br/>
             <p> Number of tasks completed: ${roundResult.tasks_completed ? roundResult.tasks_completed.length : 0}</p>
             <br/>
         `;
@@ -289,17 +315,23 @@ export default async function update(params) {
         // fetch round result
         let roundResult = await getRoundResult(game);
         html = `
-            <h3> Voting Results </h3>
+            <h3> Voting is over! </h3>
             <br/>
-            <p> This player has been eliminated: ${roundResult.eliminated ? roundResult.eliminated[0].display_name : "No one!"} </p>
+            ${roundResult.eliminated && roundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion :)</p><br/>"}
+            ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p.reason)}</p>`)}
         `;
 
     } else if (game.status == "End") {
         // display the names of the winners
         html = `
             <h3> Game Over! </h3>
+            <p> ${gameResultToText(game.win_result)} </p>
             <br/>
-            <p> Winning players are: </p> <br/>
+            ${players.length == 0 ? (
+                ""
+            ) : (
+                "<p> I'm happy to report the following beavers have avoided deletion :) </p> <br/>"
+            )}
             ${players.map(p => `<p>${p.display_name}</p><br/>`)}
         `;
     }
