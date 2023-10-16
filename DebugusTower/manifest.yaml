@@ -17,7 +17,7 @@ spec:
   name: Debug Us Tower 
   description: "Create a tonk to help the debugger find all buggy players — or get bugged and corrupt others!"
   category: factory
-  model: 01-08
+  model: 14-06
   contract:
     file: ./DebugUsTower.sol
   plugin:

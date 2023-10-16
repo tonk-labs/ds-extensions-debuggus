@@ -3,7 +3,7 @@ spec:
   name: Loggers Retreat
   description: "DebugUs: log file huts for loggers burning log files"
   category: factory
-  model: 08-08
+  model: 09-05
   contract:
     file: ./LoggersRetreat.sol
   plugin:

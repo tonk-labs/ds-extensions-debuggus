@@ -47,6 +47,17 @@ async function getPlayers(gameId, playerId) {
 }
 
 
+async function getLastRoundResult(game) {
+    //TODO implement 
+    try {
+        let lastRound = game.time.round - 1;
+        let response = await fetch(`${ENDPOINT}/game/result/${lastRound}`)
+        let text = await response.text();
+        return JSON.parse(text);
+    } catch (e) {
+        console.log(e);
+    }
+}
 
 async function registerPlayer(id, mobileUnitId, displayName, hash, secret) {
     var raw = JSON.stringify({
@@ -119,7 +130,19 @@ async function postAction(target, game, player) {
       }
 }
 
-function formatHtml(status, game, player, players, task) {
+function reasonToPlaintext(reason) {
+    if (reason == "BuggedOut") {
+        return "got bugged out!"
+    } else if (reason == "VotedOut") {
+        return "has been voted out!"
+    } else if (reason == "Inaction") {
+        return "has failed out!"
+    } else {
+        return "has been swallowed by an error!"
+    }
+}
+
+function formatHtml(status, game, player, players, task, lastRoundResult) {
     let the_other_bugs = []; 
     if (players.length > 0 && players[0].role) {
         players.map((p) => {
@@ -200,7 +223,10 @@ function formatHtml(status, game, player, players, task) {
             <p> Indecision will result in your deletion. Thank you for your cooperation :) </p>
             <br/>
             ${player.role && player.role == "Bugged" ? `${the_other_bugs_html}</br>` : ""}
-            <p> Go to the tower and submit your vote! </p>
+            <p> Go to the tower and submit your vote! </p> <br/>
+            <p> Results of the last task round: </p>
+            ${lastRoundResult.eliminated && lastRoundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion :)</p><br/>"}
+            ${lastRoundResult.eliminated && lastRoundResult.eliminated.length > 0 ? lastRoundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p.reason)}</p>`) : ""}
         `;
     } else if (status == "VoteResult") {
         return `
@@ -256,10 +282,11 @@ export default async function update(params) {
     let players = await getPlayers(game.id, player.id);
     let has_joined = isInGame(players, player.id);
     let status = has_joined ? game.status : "SPECTATOR"
+    let lastRoundResult = null;
 
     let nameField = player.mobileUnits[0].name || { value: `UNIT ${player.mobileUnits[0].key.replace("0x", "").toUpperCase()}`}
-    console.log(player.mobileUnits[0].id);
-    if (tonkPlayer.id == "" || first_click_in) {
+    // console.log(player.mobileUnits[0].id);
+    if (!tonkPlayer || tonkPlayer.id == "" || first_click_in) {
         await registerPlayer(player.id, player.mobileUnits[0].id, nameField.value.toUpperCase());
         first_click_in = false;
     } else if (tonkPlayer.display_name != nameField.value) {
@@ -301,6 +328,10 @@ export default async function update(params) {
         }
     }
 
+    if (status == "Vote") {
+        lastRoundResult = getLastRoundResult(game);
+    }
+
     return {
         version: 1,
         components: [
@@ -314,7 +345,7 @@ export default async function update(params) {
                         html: `
                             <h1> Debug Us </h1>
                             <br/>
-                            ${formatHtml(status, game, tonkPlayer, players, task)}
+                            ${formatHtml(status, game, tonkPlayer, players, task, lastRoundResult)}
                         `,
                         buttons
                     },

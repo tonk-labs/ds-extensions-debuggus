@@ -3,7 +3,7 @@ spec:
   name: Breakpoint Vista 
   description: "DebugUs: set a breakpoint and get a better view"
   category: factory
-  model: 07-02
+  model: 04-14
   contract:
     file: ./BreakpointVista.sol
   plugin:

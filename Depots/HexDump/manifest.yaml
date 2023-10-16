@@ -3,7 +3,7 @@ spec:
   name: Hex Dump
   description: "DebugUs: dig through a big 'ol pile of mystic hex code"
   category: factory
-  model: 00-03
+  model: 05-10
   contract:
     file: ./HexDump.sol
   plugin:
