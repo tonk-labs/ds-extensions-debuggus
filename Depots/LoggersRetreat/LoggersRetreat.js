@@ -1,14 +1,8 @@
 import ds from 'downstream';
 
 export default async function update({ selected }) {
-    const { tiles, mobileUnit } = selected || {};
-    const selectedTile = tiles && tiles.length === 1 ? tiles[0] : undefined;
-    const selectedBuilding = selectedTile && selectedTile.building ? selectedTile.building : undefined;
-    const selectedEngineer = mobileUnit;
-    if (!!selectedBuilding) {
-        console.log("building id", selectedBuilding.id);
-        console.log("selected coords: ", selectedTile.coords);
-    }
+    console.log("building id: ", selected.mapElement.id);
+    console.log("selected coords: ", selected.tiles[0].coords);
     // const inputBag = selectedBuilding && selectedBuilding.bags.find(b => b.key == 0).bag;
     // const canPourDrink = inputBag && inputBag.slots.length == 2 && inputBag.slots.every(slot => slot.balance > 0) && selectedEngineer;
 

@@ -84,10 +84,11 @@ async function requestJoin(gameId, playerId, secretKey) {
     }
 }
 
-async function getRoundResult() {
+async function getRoundResult(game, round) {
+    let roundNum = round ? round : game.time.round;
     //TODO implement 
     try {
-        let response = await fetch(`${ENDPOINT}/game/result`)
+        let response = await fetch(`${ENDPOINT}/game/result/${roundNum}`)
         let text = await response.text();
         return JSON.parse(text);
     } catch (e) {
@@ -156,20 +157,42 @@ function reasonToPlaintext(reason) {
     }
 }
 
+function findBags(world, mobileUnit) {
+    return world.bags.filter((b) => b.equipee.node.id == mobileUnit.id);
+}
+
 export default async function update(params) {
-    const { selected, player } = params; 
+    const { selected, player, world } = params; 
+
     // console.log(params);
-    const { tiles, mobileUnit } = selected || {};
-    const selectedTile = tiles && tiles.length === 1 ? tiles[0] : undefined;
-    const selectedBuilding = selectedTile && selectedTile.building ? selectedTile.building : undefined;
-    const selectedEngineer = mobileUnit;
-    const inputBag = selectedBuilding && selectedBuilding.bags.find(b => b.key == 0).bag;
-    const canCraftTonk = inputBag && inputBag.slots.length == 2 && inputBag.slots.every(slot => slot.balance > 0) && selectedEngineer;
-    if (!!selectedBuilding) {
-        console.log("building id: ", selectedBuilding.id);
-        console.log("selected coords: ", selectedTile.coords);
-    }
+    const { mobileUnit } = selected || {};
+    // const selectedTile = tiles && tiles.length === 1 ? tiles[0] : undefined;
+    // const selectedBuilding = selectedTile && selectedTile.building ? selectedTile.building : undefined;
+    // const selectedEngineer = mobileUnit;
+    // const inputBag = selectedBuilding && selectedBuilding.bags.find(b => b.key == 0).bag;
+    // const canCraftTonk = inputBag && inputBag.slots.length == 2 && inputBag.slots.every(slot => slot.balance > 0) && selectedEngineer;
+    console.log("building id: ", selected.mapElement.id);
+    console.log("selected coords: ", selected.tiles[0].coords);
     // console.log(player);
+    const buildingId = selected.mapElement.id;
+
+    if (!mobileUnit || (mobileUnit && mobileUnit.owner.id !== player.id)) {
+        return {
+            version: 1,
+            components: [
+                {
+                    id: 'debugus-tower',
+                    type: 'building',
+                    content: [{
+                        id: 'default',
+                        type: 'inline',
+                        html: "",
+                        buttons: [],
+                    }],
+                },
+            ],
+        }
+    }
 
     game = await getGame();
     players = await getPlayers(game.id, player.id);
@@ -201,11 +224,11 @@ export default async function update(params) {
     }
 
     const craft = () => {
-        if (!selectedEngineer) {
+        if (!mobileUnit) {
             ds.log('no selected engineer');
             return;
         }
-        if (!selectedBuilding) {
+        if (!buildingId) {
             ds.log('no selected building');
             return;
         }
@@ -213,7 +236,7 @@ export default async function update(params) {
         ds.dispatch(
             {
                 name: 'BUILDING_USE',
-                args: [selectedBuilding.id, selectedEngineer.id, []]
+                args: [buildingId, mobileUnit.id, []]
             },
         );
 
@@ -232,7 +255,9 @@ export default async function update(params) {
         saved_vote_id = values.vote;
     };
 
-    const has_tonk = player.mobileUnits[0].bags[0].bag.slots.findIndex(b => b.item && b.item.name.value == 'Tonk') >= 0 || player.mobileUnits[0].bags[1].bag.slots.findIndex(b => b.item && b.item.name.value == 'Tonk') >= 0
+    let bags = findBags(world, mobileUnit);
+
+    const has_tonk = bags[0].slots.findIndex(b => b.item && b.item.name.value == 'Tonk') >= 0 || bags[1].slots.findIndex(b => b.item && b.item.name.value == 'Tonk') >= 0
     const player_is_in_game = players ? players.findIndex(p => p.id == player.id) >= 0 : [];
 
     let html = ``;
@@ -259,23 +284,18 @@ export default async function update(params) {
             <br/>
             <p> Players have been assigned their tasks </p>
             `;
-
-    } else if (game.status == "TaskResult") {
-        let roundResult = await getRoundResult(game);
+    } else if (game.status == "Vote") {
+        // fetch round result for task round
+        let roundResult = await getRoundResult(game, game.time.round - 1);
+        tonkPlayer = await getPlayer(player.id);
         html = `
-            <h3> Tasks round is over! </h3>
+            <h3> Voting in session </h3>
             <br/>
             ${roundResult.eliminated && roundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion :)</p><br/>"}
             ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p.reason)}</p>`)}
             <br/>
             <p> Number of tasks completed: ${roundResult.tasks_completed ? roundResult.tasks_completed.length : 0}</p>
             <br/>
-        `;
-
-    } else if (game.status == "Vote") {
-        tonkPlayer = await getPlayer(player.id);
-        html = `
-            <h3> Voting in session </h3>
             <br/>
             <p> Cast your vote to identify and eliminate the bugs </p>
             <br />
@@ -312,7 +332,7 @@ export default async function update(params) {
             }
         }
     } else if (game.status == "VoteResult") {
-        // fetch round result
+        // fetch round result for  round
         let roundResult = await getRoundResult(game);
         html = `
             <h3> Voting is over! </h3>
@@ -344,7 +364,7 @@ export default async function update(params) {
     }
 
     if (!has_tonk) {
-        buttons.push({ text: 'Craft Tonk', type: 'action', action: craft, disabled: !canCraftTonk })
+        buttons.push({ text: 'Craft Tonk', type: 'action', action: craft, disabled: false })
         html+=`
             <p> You need a Tonk to play the game </p>
             <br />

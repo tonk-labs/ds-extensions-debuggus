@@ -142,6 +142,23 @@ function reasonToPlaintext(reason) {
     }
 }
 
+function buildingIdToDirections(readableId) {
+    switch(readableId) {
+        case "HEX_DUMP": {
+            return { at: "North", with: "with the gears and antenna"};
+        }
+        case "BREAKPOINT_VISTA": {
+            return {at: "West", with: "with the umbrella on top"};
+        }
+        case "LOGGERS_RETREAT": {
+            return {at: "East", with: "with the spinning windmill"};
+        }
+        default: {
+            return "";
+        }
+    }
+}
+
 function formatHtml(status, game, player, players, task, lastRoundResult) {
     let the_other_bugs = []; 
     if (players.length > 0 && players[0].role) {
@@ -164,6 +181,10 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
         return `
             <p> Please go to the debug us tower to join the game </p>
         `
+    } else if (status == "ELIMINATED") {
+        return `
+            <p> You have been eliminated! You can watch the game progress at the Debug Us Tower </p>
+        `;
     } else if (status == "Lobby") {
         return `
             <h3>Lobby</h3>
@@ -192,6 +213,7 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
                 )}
             `
         } else {
+            let directions = buildingIdToDirections(task.destination.readable_id);
             return `
                 <h3> Complete the Task </h3>
                 <h3>Time remaining: ${game.time.timer}</h3>
@@ -203,7 +225,9 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
                 ) : task.dropped_off ? (
                     `<p> Objective: Return to the Tower to complete the task! </p>`
                 ) : (
-                    `<p> Objective: ${task.destination.task_message} </p>`
+                    `
+                    <p> At the building ${directions.at} of the tower, ${directions.with}! </p>
+                    <p> Objective: ${task.destination.task_message} </p>`
                 )}
             `
         }
@@ -281,17 +305,19 @@ export default async function update(params) {
 
     let players = await getPlayers(game.id, player.id);
     let has_joined = isInGame(players, player.id);
-    let status = has_joined ? game.status : "SPECTATOR"
+    let status = has_joined ? game.status : "SPECTATOR";
     let lastRoundResult = null;
 
-    let nameField = player.mobileUnits[0].name || { value: `UNIT ${player.mobileUnits[0].key.replace("0x", "").toUpperCase()}`}
+    let nameField = mobileUnit.name || { value: `UNIT ${mobileUnit.key.replace("0x", "").toUpperCase()}`}
     // console.log(player.mobileUnits[0].id);
     if (!tonkPlayer || tonkPlayer.id == "" || first_click_in) {
-        await registerPlayer(player.id, player.mobileUnits[0].id, nameField.value.toUpperCase());
+        await registerPlayer(player.id, mobileUnit.id, nameField.value.toUpperCase());
         first_click_in = false;
     } else if (tonkPlayer.display_name != nameField.value) {
-        await registerPlayer(player.id, player.mobileUnits[0].id, nameField.value.toUpperCase());
+        await registerPlayer(player.id, mobileUnit.id, nameField.value.toUpperCase());
     }
+
+    status = tonkPlayer.eliminated ? "ELIMINATED" : status;
 
     if (status == "Tasks") {
         task = await getTask(tonkPlayer);

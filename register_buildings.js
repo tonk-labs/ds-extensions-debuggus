@@ -3,7 +3,7 @@ let ENDPOINT = "https://ds-api.tonk.gg"
 
 let activeEndpoint = "local";
 
-async function register_building(id, is_tower, message, location) {
+async function register_building(id, readable_id, is_tower, message, location) {
     var myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
 
@@ -11,6 +11,7 @@ async function register_building(id, is_tower, message, location) {
         "id": id,
         "is_tower": is_tower,
         "task_message": message,
+        "readable_id": readable_id,
         location,
     });
 
@@ -35,17 +36,17 @@ const BREAKPOINT_MESSAGE = "Experience ego death as you stare into the big red d
 
 async function register_all() {
     activeEndpoint = "prod"
-    await register_building("0x34cf8a7e0000000000000000000000000000ffff00000001",true, "", [
-        '0x0', '0xffff', '0x0', '0x01'
+    await register_building("0x34cf8a7e000000000000000000000000000000010000ffff", "TOWER", true, "", [
+         '0x0', '0x01', '0x0', '0xffff'
     ])
-    await register_building("0x34cf8a7e00000000000000000000000000000009fffffff8",false, HEX_DUMP_MESSAGE, [
-        '0x0', '0x09', '0xffff', '0xfff8'
+    await register_building("0x34cf8a7e0000000000000000000000000000fff9000afffd", "HEX_DUMP", false, HEX_DUMP_MESSAGE, [
+        '0x0', '0xfff9', '0x0a', '0xfffd'
     ])
-    await register_building("0x34cf8a7e0000000000000000000000000000fffffff80009",false, LOGGERS_MESSAGE, [
-        '0x0', '0xffff', '0xfff8', '0x09'
+    await register_building("0x34cf8a7e000000000000000000000000000000050002fff9", "LOGGERS_RETREAT", false, LOGGERS_MESSAGE, [
+        '0x0', '0x05', '0x02', '0xfff9'
     ])
-    await register_building("0x34cf8a7e0000000000000000000000000000fff800080000",false, BREAKPOINT_MESSAGE, [
-        '0x0', '0xfff8', '0x08', '0x0'
+    await register_building("0x34cf8a7e0000000000000000000000000000fff400030009", "BREAKPOINT_VISTA", false, BREAKPOINT_MESSAGE, [
+        '0x0', '0xfff4', '0x03', '0x09'
     ])
 }
 // async function register_all() {
@@ -66,16 +67,16 @@ async function register_all() {
 
 async function register_all_local() {
     activeEndpoint = "local"
-    await register_building("0x34cf8a7e000000000000000000000000000000010000ffff",true, "", [
+    await register_building("0x34cf8a7e000000000000000000000000000000010000ffff", "TOWER", true, "", [
         '0x0', '0x01', '0x0', '0xffff'
     ])
-    await register_building("0x34cf8a7e0000000000000000000000000000fff8000afffe",false, HEX_DUMP_MESSAGE, [
+    await register_building("0x34cf8a7e0000000000000000000000000000fff8000afffe", "HEX_DUMP", false, HEX_DUMP_MESSAGE, [
         '0x0', '0xfff8', '0x0a', '0xfffe'
     ])
-    await register_building("0x34cf8a7e000000000000000000000000000000050002fff9",false, LOGGERS_MESSAGE, [
+    await register_building("0x34cf8a7e000000000000000000000000000000050002fff9", "LOGGERS_RETREAT", false, LOGGERS_MESSAGE, [
         '0x0', '0x05', '0x02', '0xfff9'
     ])
-    await register_building("0x34cf8a7e0000000000000000000000000000fffcfffd0007",false, BREAKPOINT_MESSAGE, [
+    await register_building("0x34cf8a7e0000000000000000000000000000fffcfffd0007", "BREAKPOINT_VISTA", false, BREAKPOINT_MESSAGE, [
         '0x0', '0xfffc', '0xfffd', '0x07'
     ])
 }
