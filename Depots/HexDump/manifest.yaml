@@ -1,9 +1,10 @@
 kind: BuildingKind
 spec:
   name: Hex Dump
-  description: "DebugUs: dig through a big 'ol pile of mystic hex code"
+  description: "TonkAttack: a monstrous pile of worthless hex codes"
   category: factory
   model: 05-10
+  color: 3
   contract:
     file: ./HexDump.sol
   plugin:

@@ -8,10 +8,10 @@ const homeDirectory = os.homedir();
 
 // Define source and destination paths
 const sources = [
-    './DebugusTower',
-    './Depots/BreakpointVista',
+    './TonkTower',
+    './Depots/MemeGenerator',
     './Depots/HexDump',
-    './Depots/LoggersRetreat'
+    './Depots/SelfiePoint'
 ];
 const destination = path.join(homeDirectory, 'Workspace/ds/contracts/src/fixtures/debug-us/');
 

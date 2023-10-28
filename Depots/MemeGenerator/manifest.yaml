@@ -1,13 +1,14 @@
 kind: BuildingKind
 spec:
-  name: Breakpoint Vista 
-  description: "DebugUs: set a breakpoint and get a better view"
+  name: Meme Generator
+  description: "TonkAttack: you wouldn't steam a ham"
   category: factory
-  model: 04-14
+  model: 04-17
+  color: 4
   contract:
-    file: ./BreakpointVista.sol
+    file: ./MemeGenerator.sol
   plugin:
-    file: ./BreakpointVista.js
+    file: ./MemeGenerator.js
   materials:
     - name: Green Goo
       quantity: 10

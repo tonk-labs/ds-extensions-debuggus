@@ -1,13 +1,14 @@
 kind: BuildingKind
 spec:
-  name: Loggers Retreat
-  description: "DebugUs: log file huts for loggers burning log files"
+  name: Selfie Point 
+  description: "TonkAttack: an exotic location perfect for basic selfies"
   category: factory
-  model: 09-05
+  model: 04-14
+  color: 1
   contract:
-    file: ./LoggersRetreat.sol
+    file: ./SelfiePoint.sol
   plugin:
-    file: ./LoggersRetreat.js
+    file: ./SelfiePoint.js
   materials:
     - name: Green Goo
       quantity: 10

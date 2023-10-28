@@ -14,21 +14,21 @@ spec:
 ---
 kind: BuildingKind
 spec:
-  name: Debug Us Tower 
-  description: "Create a tonk to help the debugger find all buggy players — or get bugged and corrupt others!"
+  name: Tonk Tower 
+  description: "Create a tonk and work together to feed the evil AI garbage data — but beware the corrupted beavers!"
   category: factory
   model: 14-06
   contract:
-    file: ./DebugUsTower.sol
+    file: ./TonkTower.sol
   plugin:
-    file: ./DebugUsTower.js
+    file: ./TonkTower.js
   materials:
     - name: Green Goo
-      quantity: 25
+      quantity: 10 
     - name: Blue Goo
-      quantity: 25
+      quantity: 10
     - name: Red Goo
-      quantity: 25
+      quantity: 10 
   inputs:
     - name: Blue Goo
       quantity: 4

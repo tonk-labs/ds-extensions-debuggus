@@ -34,7 +34,7 @@ export default async function update({ selected }) {
         version: 1,
         components: [
             {
-                id: 'breakpoint-vista',
+                id: 'selfie-point',
                 type: 'building',
                 content: [
                     {

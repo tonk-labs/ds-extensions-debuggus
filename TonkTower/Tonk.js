@@ -49,6 +49,7 @@ async function getPlayers(gameId, playerId) {
 
 async function getLastRoundResult(game) {
     //TODO implement 
+    console.log("tonk getLastRound", game.time.round-1)
     try {
         let lastRound = game.time.round - 1;
         let response = await fetch(`${ENDPOINT}/game/result/${lastRound}`)
@@ -130,13 +131,14 @@ async function postAction(target, game, player) {
       }
 }
 
-function reasonToPlaintext(reason) {
+function reasonToPlaintext(p) {
+    const { reason, player } = p; 
     if (reason == "BuggedOut") {
-        return "got bugged out!"
+        return `has been eliminated and ${player.role == "Bugged" ? 'was corrupted' : 'was an innocent beaver'}`;
     } else if (reason == "VotedOut") {
-        return "has been voted out!"
+        return `has been voted out and ${player.role == "Bugged" ? 'was corrupted' : 'was an innocent beaver'}`;
     } else if (reason == "Inaction") {
-        return "has failed out!"
+        return `was ${player.role == "Bugged" ? 'corrupted' : 'an innocent beaver'} and has been eliminated due to inaction`
     } else {
         return "has been swallowed by an error!"
     }
@@ -145,13 +147,13 @@ function reasonToPlaintext(reason) {
 function buildingIdToDirections(readableId) {
     switch(readableId) {
         case "HEX_DUMP": {
-            return { at: "North", with: "with the gears and antenna"};
+            return { at: "North", with: "with the gears and pipes"};
         }
-        case "BREAKPOINT_VISTA": {
+        case "SELFIE_POINT": {
             return {at: "West", with: "with the umbrella on top"};
         }
-        case "LOGGERS_RETREAT": {
-            return {at: "East", with: "with the spinning windmill"};
+        case "MEME_GEN": {
+            return {at: "East", with: "with the steamed ham ontop"};
         }
         default: {
             return "";
@@ -168,7 +170,7 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
             }
         })
     }
-    let the_other_bugs_html = the_other_bugs.length > 1 ? `<p> Pssst, the other bugs are: 
+    let the_other_bugs_html = the_other_bugs.length > 1 ? `<p> Pssst, the other corrupted are: 
         ${the_other_bugs.map((bugs,i) => {
             if (i == 0) {
                 return bugs.display_name;
@@ -179,11 +181,11 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
 
     if (status == "SPECTATOR") {
         return `
-            <p> Please go to the debug us tower to join the game </p>
+            <p> Please go to the Tonk Tower to join the game </p>
         `
     } else if (status == "ELIMINATED") {
         return `
-            <p> You have been eliminated! You can watch the game progress at the Debug Us Tower </p>
+            <p> You have been eliminated! You can watch the game progress at the Tonk Tower </p>
         `;
     } else if (status == "Lobby") {
         return `
@@ -199,14 +201,14 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
                 ${the_other_bugs_html}
                 </br>
                 ${player.used_action ? (
-                    `<p> Ok, chill, chill, you just bugged someone. Try to act normal!`
+                    `<p> Ok, chill, chill, you just attacked someone. Try to act normal!`
                 ) : (
                     `<p> Objective: ${task.destination.task_message} </p></br>${
-                        player.immune ? (
-                            "<p> Your bugging powers are useless within 3 tiles of the Tower </p> "
+                        player.proximity.immune ? (
+                            "<p> Your attack power is useless within 3 tiles of the Tower </p> "
                         ) : (
-                            player.nearby_players && player.nearby_players.length == 0 ? (
-                                `<p> There are no nearby players to bug. You must be within 2 tiles to bug someone. </p>`
+                            player.proximity.nearby_players && player.proximity.nearby_players.length == 0 ? (
+                                `<p> There are no nearby players to attack. You must be within 2 tiles to attack someone. </p>`
                             ) : ""
                         )
                     }`
@@ -250,7 +252,7 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
             <p> Go to the tower and submit your vote! </p> <br/>
             <p> Results of the last task round: </p>
             ${lastRoundResult.eliminated && lastRoundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion :)</p><br/>"}
-            ${lastRoundResult.eliminated && lastRoundResult.eliminated.length > 0 ? lastRoundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p.reason)}</p>`) : ""}
+            ${lastRoundResult.eliminated && lastRoundResult.eliminated.length > 0 ? lastRoundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p)}</p>`) : ""}
         `;
     } else if (status == "VoteResult") {
         return `
@@ -270,16 +272,47 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
     }
 }
 
+function inlineStyle(style) {
+    return Object.keys(style).map(key => {
+        return `${key}:${style[key]}`
+    }).join(';');
+} 
+
+function showNotification(proximity) {
+    let nearbyPlayers = proximity ? proximity.nearby_players : [];
+    let container = {
+        position: 'fixed',
+        display: 'inline-block',
+        bottom: '3.6rem',
+        right: '2.4rem',
+        "min-height": '4rem',
+        "max-height": '20rem',
+        padding: '1.2rem',
+        "background-color": 'white',
+        transition: 'bottom 1s ease-in, opacity 0.6s ease-in',
+        "border-radius": "1.2rem",
+        border: "#0D090F 3px solid"
+    };
+    return `
+        <div style="${inlineStyle(container)}">
+            ${nearbyPlayers ? nearbyPlayers.length == 0 ? (
+                "No one is nearby"
+            ) : (
+                nearbyPlayers.map((n) =>`<p>${n.display_name}</p>`).join('\n')
+            ) : "No one is nearby"}
+        <div>
+    `
+}
+
 export default async function update(params) {
     const { selected, player } = params;
     const { mobileUnit } = selected || {};
 
     game = await getGame();
     tonkPlayer = await getPlayer(player.id);
-    let task = "";
-    let buttons;
 
-    // console.log(tonkPlayer);
+    let task = "";
+    let buttons = [];
 
     const bugOut = (id, displayName) => {
         bugging = true;
@@ -309,23 +342,24 @@ export default async function update(params) {
     let lastRoundResult = null;
 
     let nameField = mobileUnit.name || { value: `UNIT ${mobileUnit.key.replace("0x", "").toUpperCase()}`}
-    // console.log(player.mobileUnits[0].id);
     if (!tonkPlayer || tonkPlayer.id == "" || first_click_in) {
-        await registerPlayer(player.id, mobileUnit.id, nameField.value.toUpperCase());
+        await registerPlayer(player.id, mobileUnit.id, nameField.value);
         first_click_in = false;
     } else if (tonkPlayer.display_name != nameField.value) {
-        await registerPlayer(player.id, mobileUnit.id, nameField.value.toUpperCase());
+        await registerPlayer(player.id, mobileUnit.id, nameField.value);
     }
 
     status = tonkPlayer.eliminated ? "ELIMINATED" : status;
 
     if (status == "Tasks") {
         task = await getTask(tonkPlayer);
-        if (tonkPlayer.role == "Bugged" && tonkPlayer.nearby_players && tonkPlayer.nearby_players.length != 0 && !tonkPlayer.used_action) {
+        if (tonkPlayer.role == "Bugged" && tonkPlayer.proximity.nearby_players && tonkPlayer.proximity.nearby_players.length != 0 && !tonkPlayer.used_action) {
             buttons = [];
-            tonkPlayer.nearby_players.forEach((p) => {
+            tonkPlayer.proximity.nearby_players.forEach((p) => {
                 console.log("nearby player: ", p);
-                if (!p.immune) {
+                if (!p.proximity.immune && p.role !== "Bugged") {
+                    console.log('weve pushed the button');
+                    console.log('state of bugging: ', bugging);
                     buttons.push(
                         { text: `Bug ${p.display_name}`, type: 'action', action: bugOut.bind(this, p.id, p.display_name), disabled: bugging }
                     )
@@ -341,12 +375,12 @@ export default async function update(params) {
                 await postTask(task, tonkPlayer);
                 perform_function = false;
             }
-            if (tonkPlayer.nearby_buildings && tonkPlayer.nearby_buildings.findIndex((b) => b.id == task.destination.id) >= 0 && !task.dropped_off) {
+            if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.id == task.destination.id) >= 0 && !task.dropped_off) {
                 buttons = [
                     { text: 'Perform function', type: 'action', action: performFunction, disabled: perform_function }
                 ];
             }
-            if (tonkPlayer.nearby_buildings && tonkPlayer.nearby_buildings.findIndex((b) => b.is_tower) >= 0 && !task.complete && task.dropped_off) {
+            if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.is_tower) >= 0 && !task.complete && task.dropped_off) {
                 buttons = [
                     { text: 'Complete task', type: 'action', action: completeTask, disabled: complete_task }
                 ];
@@ -369,9 +403,10 @@ export default async function update(params) {
                         id: 'default',
                         type: 'inline',
                         html: `
-                            <h1> Debug Us </h1>
+                            <h1> Tonk Attack! </h1>
                             <br/>
                             ${formatHtml(status, game, tonkPlayer, players, task, lastRoundResult)}
+                            ${showNotification(tonkPlayer.proximity)}
                         `,
                         buttons
                     },

@@ -1,19 +1,19 @@
 ---
 kind: Building
 spec:
-  name: Debug Us Tower
+  name: Tonk Tower
   location: [1, 0, -1]
 
 ---
 kind: Building
 spec:
-  name: Loggers Retreat
+  name: Meme Generator 
   location: [5, 2, -7]
 
 ---
 kind: Building
 spec:
-  name: Breakpoint Vista
+  name: Selfie Point 
   location: [-4, -3, 7]
 
 ---

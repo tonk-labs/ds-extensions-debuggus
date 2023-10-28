@@ -85,10 +85,9 @@ async function requestJoin(gameId, playerId, secretKey) {
 }
 
 async function getRoundResult(game, round) {
-    let roundNum = round ? round : game.time.round;
     //TODO implement 
     try {
-        let response = await fetch(`${ENDPOINT}/game/result/${roundNum}`)
+        let response = await fetch(`${ENDPOINT}/game/result/${round}`)
         let text = await response.text();
         return JSON.parse(text);
     } catch (e) {
@@ -132,33 +131,35 @@ async function getPlayer(id) {
     }
 }
 
-function gameResultToText(result) {
+function gameResultToText(game) {
+    const { result, corrupted_players } = game;
     if (result == "Thuggery") {
-        return "The bugs have prevailed through sheer thuggery!"
+        return "The corrupted won by being the majority!"
     } else if (result == "Democracy") {
-        return "Democracy has prevailed over the thuggery of bugs!"
+        return `The taskers have won because they voted out all corrupted: ${corrupted_players.forEach((p, i) => i == 0 ? " " : ", " + p.display_name)}!`
     } else if (result == "Perfection") {
-        return "The beavers have flawlessly performed their tasks!"
+        return "The taskers have won because they performed all their tasks!"
     } else if (result == "Armageddon") {
         return "Beavergeddon has descended upon your kind. There is no one left."
     } else {
         return "The game is over, but I don't know why!"
     }
 }
-function reasonToPlaintext(reason) {
+function reasonToPlaintext(p) {
+    const { reason, player } = p; 
     if (reason == "BuggedOut") {
-        return "got bugged out!"
+        return `has been eliminated and ${player.role == "Bugged" ? 'was corrupted' : 'was an innocent beaver'}`;
     } else if (reason == "VotedOut") {
-        return "has been voted out!"
+        return `has been voted out and ${player.role == "Bugged" ? 'was corrupted' : 'was an innocent beaver'}`;
     } else if (reason == "Inaction") {
-        return "has failed out!"
+        return `was ${player.role == "Bugged" ? 'corrupted' : 'an innocent beaver'} and has been eliminated due to inaction`
     } else {
         return "has been swallowed by an error!"
     }
 }
 
 function findBags(world, mobileUnit) {
-    return world.bags.filter((b) => b.equipee.node.id == mobileUnit.id);
+    return world.bags.filter((b) => b.equipee && b.equipee.node.id == mobileUnit.id);
 }
 
 export default async function update(params) {
@@ -181,7 +182,7 @@ export default async function update(params) {
             version: 1,
             components: [
                 {
-                    id: 'debugus-tower',
+                    id: 'tonk-tower',
                     type: 'building',
                     content: [{
                         id: 'default',
@@ -255,6 +256,7 @@ export default async function update(params) {
         saved_vote_id = values.vote;
     };
 
+    // console.log(world, mobileUnit);
     let bags = findBags(world, mobileUnit);
 
     const has_tonk = bags[0].slots.findIndex(b => b.item && b.item.name.value == 'Tonk') >= 0 || bags[1].slots.findIndex(b => b.item && b.item.name.value == 'Tonk') >= 0
@@ -292,12 +294,12 @@ export default async function update(params) {
             <h3> Voting in session </h3>
             <br/>
             ${roundResult.eliminated && roundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion :)</p><br/>"}
-            ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p.reason)}</p>`)}
+            ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p)}</p>`)}
             <br/>
             <p> Number of tasks completed: ${roundResult.tasks_completed ? roundResult.tasks_completed.length : 0}</p>
             <br/>
             <br/>
-            <p> Cast your vote to identify and eliminate the bugs </p>
+            <p> Cast your vote to identify and eliminate the corrupted </p>
             <br />
             <label>VOTE</label>
             `;
@@ -333,7 +335,7 @@ export default async function update(params) {
         }
     } else if (game.status == "VoteResult") {
         // fetch round result for  round
-        let roundResult = await getRoundResult(game);
+        let roundResult = await getRoundResult(game, game.time.round);
         html = `
             <h3> Voting is over! </h3>
             <br/>
@@ -345,7 +347,7 @@ export default async function update(params) {
         // display the names of the winners
         html = `
             <h3> Game Over! </h3>
-            <p> ${gameResultToText(game.win_result)} </p>
+            <p> ${gameResultToText(game)} </p>
             <br/>
             ${players.length == 0 ? (
                 ""
@@ -359,7 +361,7 @@ export default async function update(params) {
     if (game.status == "GameServerDown") {
         // Display error about game server
         html = `
-            <p>The gods of debug us require a sacrifice to continue playing this game<p>
+            <p>The game server is down and thus the gods of Tonk Attack require a sacrifice to continue playing this game<p>
         `;
     }
 
@@ -376,7 +378,7 @@ export default async function update(params) {
         version: 1,
         components: [
             {
-                id: 'debugus-tower',
+                id: 'tonk-tower',
                 type: 'building',
                 content: [{
                     id: 'default',
