@@ -132,6 +132,7 @@ async function postAction(target, game, player) {
 }
 
 function reasonToPlaintext(p) {
+    console.log(p);
     const { reason, player } = p; 
     if (reason == "BuggedOut") {
         return `has been eliminated and ${player.role == "Bugged" ? 'was corrupted' : 'was an innocent beaver'}`;

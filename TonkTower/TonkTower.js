@@ -132,20 +132,22 @@ async function getPlayer(id) {
 }
 
 function gameResultToText(game) {
-    const { result, corrupted_players } = game;
-    if (result == "Thuggery") {
+    const { win_result, corrupted_players } = game;
+    if (win_result == "Thuggery") {
         return "The corrupted won by being the majority!"
-    } else if (result == "Democracy") {
-        return `The taskers have won because they voted out all corrupted: ${corrupted_players.forEach((p, i) => i == 0 ? " " : ", " + p.display_name)}!`
-    } else if (result == "Perfection") {
+    } else if (win_result == "Democracy") {
+        //fail gracefully
+        return `The taskers have won because they voted out all the corrupted — ${corrupted_players ? corrupted_players.map((p, i) => i == 0 ? " " : ", " + p.display_name) : "hurrah"}!`
+    } else if (win_result == "Perfection") {
         return "The taskers have won because they performed all their tasks!"
-    } else if (result == "Armageddon") {
+    } else if (win_result == "Armageddon") {
         return "Beavergeddon has descended upon your kind. There is no one left."
     } else {
         return "The game is over, but I don't know why!"
     }
 }
 function reasonToPlaintext(p) {
+    console.log(p);
     const { reason, player } = p; 
     if (reason == "BuggedOut") {
         return `has been eliminated and ${player.role == "Bugged" ? 'was corrupted' : 'was an innocent beaver'}`;
@@ -294,7 +296,7 @@ export default async function update(params) {
             <h3> Voting in session </h3>
             <br/>
             ${roundResult.eliminated && roundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion :)</p><br/>"}
-            ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p)}</p>`)}
+            ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p.player)}</p>`)}
             <br/>
             <p> Number of tasks completed: ${roundResult.tasks_completed ? roundResult.tasks_completed.length : 0}</p>
             <br/>
@@ -340,7 +342,7 @@ export default async function update(params) {
             <h3> Voting is over! </h3>
             <br/>
             ${roundResult.eliminated && roundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion :)</p><br/>"}
-            ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p.reason)}</p>`)}
+            ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p)}</p>`)}
         `;
 
     } else if (game.status == "End") {

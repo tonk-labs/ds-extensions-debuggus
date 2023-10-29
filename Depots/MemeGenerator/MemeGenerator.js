@@ -33,7 +33,7 @@ export default async function update({ selected }) {
         version: 1,
         components: [
             {
-                id: 'loggers-retreat',
+                id: 'meme-generator',
                 type: 'building',
                 content: [
                     {
