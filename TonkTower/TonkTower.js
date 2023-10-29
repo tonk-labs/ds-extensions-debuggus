@@ -137,7 +137,9 @@ function gameResultToText(game) {
         return "The corrupted won by being the majority!"
     } else if (win_result == "Democracy") {
         //fail gracefully
-        return `The taskers have won because they voted out ${corrupted_players ? corrupted_players.map((p, i) => `${i == 0 ? "" : ", "}${p.display_name}`).join("") + " who were the corrupted beavers" : "the corrupted beavers"}!`
+        return `The taskers have won because they voted out ${corrupted_players ? (
+            corrupted_players.map((p, i) => `${i == 0 ? "" : ", "}${p.display_name}`).join("") + corrupted_players.length > 1 ? (
+                " who were the corrupted beavers") : " who was the corrupted beaver") : "the corrupted beavers"}!`
     } else if (win_result == "Perfection") {
         return "The taskers have won because they performed all their tasks!"
     } else if (win_result == "Armageddon") {
@@ -295,7 +297,7 @@ export default async function update(params) {
         html = `
             <h3> Voting in session </h3>
             <br/>
-            ${roundResult.eliminated && roundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion :)</p><br/>"}
+            ${roundResult.eliminated && roundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion.</p>"}
             ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p.player)}</p>`)}
             <br/>
             <p> Number of tasks completed: ${roundResult.tasks_completed ? roundResult.tasks_completed.length : 0}</p>
@@ -341,7 +343,7 @@ export default async function update(params) {
         html = `
             <h3> Voting is over! </h3>
             <br/>
-            ${roundResult.eliminated && roundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion :)</p><br/>"}
+            ${roundResult.eliminated && roundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion.</p><br/>"}
             ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p)}</p>`)}
         `;
 
@@ -354,9 +356,9 @@ export default async function update(params) {
             ${players.length == 0 ? (
                 ""
             ) : (
-                "<p> I'm happy to report the following beavers have avoided deletion: </p> <br/>"
+                "<p> I'm happy to report the following beavers have avoided deletion: "
             )}
-            ${players.map(p => `<p>${p.display_name}</p>`)}
+            ${players.map((p, i) => (i == 0 ? "" : ", ") + `${p.display_name}`)}.
         `;
     }
 

@@ -221,21 +221,27 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
             `
         } else {
             let directions = buildingIdToDirections(task.destination.readable_id);
+            let second_directions = buildingIdToDirections(task.second_destination.readable_id);
             return `
                 <h3> Complete the Task </h3>
                 <h3>Time remaining: ${game.time.timer}</h3>
                 <br/>
-                <p> Failure will result in your deletion. Thank you for your cooperation :) </p>
-                <br/>
                 ${task.complete ? (
                     `<p> Objective Complete! Take a well-deserved rest until the next round </p>`
-                ) : task.dropped_off ? (
+                ) : task.dropped_off_second ? (
                     `<p> Objective: Return to the Tower to complete the task! </p>`
+                ) : task.dropped_off ? (
+                    `<p> Now go to the second destination: </p>
+                    <p> At the building ${second_directions.at} of the tower, ${second_directions.with}! </p>
+                    <p> Objective: ${task.second_destination.task_message} </p>`
                 ) : (
                     `
+                    <p> Go to your first destination: </p>
                     <p> At the building ${directions.at} of the tower, ${directions.with}! </p>
                     <p> Objective: ${task.destination.task_message} </p>`
                 )}
+                <br/>
+                <p> [Failure will result in your deletion. Thank you for your cooperation.] </p>
             `
         }
     } else if (status == "TaskResult") {
@@ -251,13 +257,13 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
             <h3> Vote </h3>
             <h3>Time remaining: ${game.time.timer}</h3>
             <br/>
-            <p> Indecision will result in your deletion. Thank you for your cooperation :) </p>
-            <br/>
             ${player.role && player.role == "Bugged" ? `${the_other_bugs_html}</br>` : ""}
             <p> Go to the tower and submit your vote! </p> <br/>
             <p> Results of the last task round: </p>
-            ${lastRoundResult.eliminated && lastRoundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion :)</p><br/>"}
+            ${lastRoundResult.eliminated && lastRoundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion.</p>"}
             ${lastRoundResult.eliminated && lastRoundResult.eliminated.length > 0 ? lastRoundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p)}</p>`) : ""}
+            <br/>
+            <p> [Indecision will result in your deletion. Thank you for your cooperation.] </p>
         `;
     } else if (status == "VoteResult") {
         return `
@@ -404,7 +410,12 @@ export default async function update(params) {
                     { text: 'Perform function', type: 'action', action: performFunction, disabled: perform_function }
                 ];
             }
-            if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.is_tower) >= 0 && !task.complete && task.dropped_off) {
+            if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.id == task.second_destination.id) >= 0 && !task.dropped_off_second && task.dropped_off) {
+                buttons = [
+                    { text: 'Perform function', type: 'action', action: performFunction, disabled: perform_function }
+                ];
+            }
+            if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.is_tower) >= 0 && !task.complete && task.dropped_off && task.dropped_off_second) {
                 buttons = [
                     { text: 'Complete task', type: 'action', action: completeTask, disabled: complete_task }
                 ];
