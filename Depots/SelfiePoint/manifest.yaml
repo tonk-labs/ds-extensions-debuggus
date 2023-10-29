@@ -4,7 +4,7 @@ spec:
   description: "TonkAttack: an exotic location perfect for basic selfies"
   category: factory
   model: 04-14
-  color: 1
+  color: 5
   contract:
     file: ./SelfiePoint.sol
   plugin:

@@ -6,6 +6,7 @@ let player_to_bug = null;
 let complete_task = false;
 let perform_function = false;
 let first_click_in = true;
+let confirmed = false;
 
 let ENDPOINT = "http://localhost:8082"
 // let ENDPOINT = "https://ds-api.tonk.gg"
@@ -110,10 +111,11 @@ async function postTask(task, player) {
       }
 }
 
-async function postAction(target, game, player) {
+async function postAction(target, game, player, confirmed) {
     var raw = JSON.stringify({
         poison_target: target,
         round: game.time.round,
+        confirmed,
         interrupted_task: false 
     })
     var requestOptions = {
@@ -201,8 +203,10 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
                 <br/>
                 ${the_other_bugs_html}
                 </br>
-                ${player.used_action ? (
-                    `<p> Ok, chill, chill, you just attacked someone. Try to act normal!`
+                ${player.used_action == "TaskComplete" ? (
+                    `<p> Ok, great work you evil beaver you. Now, try to act normal!`
+                ) : player.used_action == "ReturnToTower" ? (
+                    `<p> You did the attack. Now you must return to the tower to confirm the dastardly deed.`
                 ) : (
                     `<p> Objective: ${task.destination.task_message} </p></br>${
                         player.proximity.immune ? (
@@ -319,8 +323,17 @@ export default async function update(params) {
         bugging = true;
         player_to_bug = {
             id,
-            display_name: displayName
+            display_name: displayName,
         }
+    }
+
+    const confirmBug = () => {
+        bugging = true;
+        confirmed = true;
+        player_to_bug = {
+            id: tonkPlayer.id,
+            display_name: "fake"
+        };
     }
 
     const completeTask = () => {
@@ -332,9 +345,10 @@ export default async function update(params) {
     }
 
     if (bugging) {
-        await postAction(player_to_bug, game, tonkPlayer);
+        await postAction(player_to_bug, game, tonkPlayer, confirmed);
         bugging = false;
         player_to_bug = null;
+        confirmed = false;
     }
 
     let players = await getPlayers(game.id, player.id);
@@ -354,19 +368,28 @@ export default async function update(params) {
 
     if (status == "Tasks") {
         task = await getTask(tonkPlayer);
-        if (tonkPlayer.role == "Bugged" && tonkPlayer.proximity.nearby_players && tonkPlayer.proximity.nearby_players.length != 0 && !tonkPlayer.used_action) {
-            buttons = [];
-            tonkPlayer.proximity.nearby_players.forEach((p) => {
-                console.log("nearby player: ", p);
-                if (!p.proximity.immune && p.role !== "Bugged") {
-                    console.log('weve pushed the button');
-                    console.log('state of bugging: ', bugging);
-                    buttons.push(
-                        { text: `Bug ${p.display_name}`, type: 'action', action: bugOut.bind(this, p.id, p.display_name), disabled: bugging }
-                    )
-                }
-
-            });
+        if (tonkPlayer.role == "Bugged") {
+            if (tonkPlayer.proximity.nearby_players && tonkPlayer.proximity.nearby_players.length != 0 && tonkPlayer.used_action !== "ReturnToTower") {
+                buttons = [];
+                tonkPlayer.proximity.nearby_players.forEach((p) => {
+                    console.log("nearby player: ", p);
+                    if (!p.proximity.immune && p.role !== "Bugged") {
+                        buttons.push(
+                            { text: `Bug ${p.display_name}`, type: 'action', action: bugOut.bind(this, p.id, p.display_name), disabled: false }
+                        )
+                    }
+                });
+            }
+            let isNearTower = tonkPlayer.proximity && tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.filter(b => b.is_tower).length > 0
+            if (tonkPlayer.used_action == "ReturnToTower" && isNearTower) {
+                buttons = [
+                    {
+                        text: `Confirm Attack`,
+                        type: 'action',
+                        action: confirmBug.bind(this), 
+                        disabled: false
+                }];
+            }
         } else {
             if (complete_task) {
                 await postTask(task, tonkPlayer);

@@ -307,7 +307,7 @@ export default async function update(params) {
             `;
         
         if (player_is_in_game) {
-            if (tonkPlayer.used_action) {
+            if (tonkPlayer.used_action == "Voted") {
                 html += `
                     <p> You have cast your vote </p>
                 `
