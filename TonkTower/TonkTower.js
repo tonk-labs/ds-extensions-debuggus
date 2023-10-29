@@ -137,7 +137,7 @@ function gameResultToText(game) {
         return "The corrupted won by being the majority!"
     } else if (win_result == "Democracy") {
         //fail gracefully
-        return `The taskers have won because they voted out all the corrupted — ${corrupted_players ? corrupted_players.map((p, i) => i == 0 ? " " : ", " + p.display_name) : "hurrah"}!`
+        return `The taskers have won because they voted out ${corrupted_players ? corrupted_players.map((p, i) => `${i == 0 ? "" : ", "}${p.display_name}`).join("") + " who were the corrupted beavers" : "the corrupted beavers"}!`
     } else if (win_result == "Perfection") {
         return "The taskers have won because they performed all their tasks!"
     } else if (win_result == "Armageddon") {
@@ -354,9 +354,9 @@ export default async function update(params) {
             ${players.length == 0 ? (
                 ""
             ) : (
-                "<p> I'm happy to report the following beavers have avoided deletion :) </p> <br/>"
+                "<p> I'm happy to report the following beavers have avoided deletion: </p> <br/>"
             )}
-            ${players.map(p => `<p>${p.display_name}</p><br/>`)}
+            ${players.map(p => `<p>${p.display_name}</p>`)}
         `;
     }
 
