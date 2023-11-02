@@ -8,8 +8,8 @@ let wants_to_start = false;
 let cast_vote = false;
 let saved_vote_id = null;
 
-let ENDPOINT = "http://localhost:8082"
-// let ENDPOINT = "https://ds-api.tonk.gg"
+// let ENDPOINT = "http://localhost:8082"
+let ENDPOINT = "https://ds-api.tonk.gg"
 
 async function getGame() {
     try {
@@ -320,7 +320,7 @@ export default async function update(params) {
                 <select name="vote" style="width: 100%">
                     `
                 html += players.map((p) => {
-                    if (p.id == tonkPlayer.id) {
+                    if (p.id == tonkPlayer.id || p.role == "Bugged") {
                         return ""
                     } else {
                         return `<option value=${p.id}>${p.display_name}</option>`;

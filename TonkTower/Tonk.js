@@ -8,8 +8,8 @@ let perform_function = false;
 let first_click_in = true;
 let confirmed = false;
 
-let ENDPOINT = "http://localhost:8082"
-// let ENDPOINT = "https://ds-api.tonk.gg"
+// let ENDPOINT = "http://localhost:8082"
+let ENDPOINT = "https://ds-api.tonk.gg"
 
 async function getGame() {
     try {
@@ -47,6 +47,15 @@ async function getPlayers(gameId, playerId) {
     }
 }
 
+async function getResult() {
+    try {
+        let response = await fetch(`${ENDPOINT}/game/result`)
+        let text = await response.text();
+        return JSON.parse(text);
+    } catch (e) {
+        console.log(e);
+    }
+}
 
 async function getLastRoundResult(game) {
     //TODO implement 
@@ -137,11 +146,11 @@ function reasonToPlaintext(p) {
     console.log(p);
     const { reason, player } = p; 
     if (reason == "BuggedOut") {
-        return `has been eliminated and ${player.role == "Bugged" ? 'was corrupted' : 'was an innocent beaver'}`;
+        return `has been eliminated and ${player.role == "Bugged" ? 'was an evil beaver' : 'was an innocent beaver'}`;
     } else if (reason == "VotedOut") {
-        return `has been voted out and ${player.role == "Bugged" ? 'was corrupted' : 'was an innocent beaver'}`;
+        return `has been voted out and ${player.role == "Bugged" ? 'was an evil beaver' : 'was an innocent beaver'}`;
     } else if (reason == "Inaction") {
-        return `was ${player.role == "Bugged" ? 'corrupted' : 'an innocent beaver'} and has been eliminated due to inaction`
+        return `was ${player.role == "Bugged" ? 'an evil beaver' : 'an innocent beaver'} and has been eliminated due to inaction`
     } else {
         return "has been swallowed by an error!"
     }
@@ -166,14 +175,14 @@ function buildingIdToDirections(readableId) {
 
 function formatHtml(status, game, player, players, task, lastRoundResult) {
     let the_other_bugs = []; 
-    if (players.length > 0 && players[0].role) {
+    if (players.length > 0 && typeof players[0].role !== 'undefined') {
         players.map((p) => {
             if (p.role == "Bugged" && p.id !== player.id) {
                 the_other_bugs.push(p);
             }
         })
     }
-    let the_other_bugs_html = the_other_bugs.length > 1 ? `<p> Pssst, the other corrupted are: 
+    let the_other_bugs_html = the_other_bugs.length > 0 ? `<p> Pssst, the other corrupted are: 
         ${the_other_bugs.map((bugs,i) => {
             if (i == 0) {
                 return bugs.display_name;
@@ -370,15 +379,20 @@ export default async function update(params) {
         await registerPlayer(player.id, mobileUnit.id, nameField.value);
     }
 
-    status = tonkPlayer.eliminated ? "ELIMINATED" : status;
+    let playerEliminated = false;
+    if (status == "VoteResult") {
+        result = await getResult();
+        playerEliminated = result.eliminated && result.eliminated.findIndex(p => p.player.id == tonkPlayer.id) >= 0;
+    }
+
+    status = tonkPlayer.eliminated || playerEliminated ? "ELIMINATED" : status;
 
     if (status == "Tasks") {
+        buttons = [];
         task = await getTask(tonkPlayer);
         if (tonkPlayer.role == "Bugged") {
-            if (tonkPlayer.proximity.nearby_players && tonkPlayer.proximity.nearby_players.length != 0 && tonkPlayer.used_action !== "ReturnToTower") {
-                buttons = [];
+            if (tonkPlayer.proximity.nearby_players && tonkPlayer.proximity.nearby_players.length != 0 && tonkPlayer.used_action == "Unused") {
                 tonkPlayer.proximity.nearby_players.forEach((p) => {
-                    console.log("nearby player: ", p);
                     if (!p.proximity.immune && p.role !== "Bugged") {
                         buttons.push(
                             { text: `Bug ${p.display_name}`, type: 'action', action: bugOut.bind(this, p.id, p.display_name), disabled: false }

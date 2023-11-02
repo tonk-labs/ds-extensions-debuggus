@@ -42,8 +42,8 @@ async function register_all() {
     await register_building("0x34cf8a7e0000000000000000000000000000fff9000afffd", "HEX_DUMP", false, HEX_DUMP_MESSAGE, [
         '0x0', '0xfff9', '0x0a', '0xfffd'
     ])
-    await register_building("0x34cf8a7e000000000000000000000000000000050002fff9", "MEME_GEN", false, MEME_GEN_MESSAGE, [
-        '0x0', '0x05', '0x02', '0xfff9'
+    await register_building("0x34cf8a7e000000000000000000000000000000090002fff5", "MEME_GEN", false, MEME_GEN_MESSAGE, [
+        '0x0', '0x09', '0x02', '0xfff5'
     ])
     await register_building("0x34cf8a7e0000000000000000000000000000fff400030009", "SELFIE_POINT", false, SELFIE_POINT_MESSAGE, [
         '0x0', '0xfff4', '0x03', '0x09'
@@ -70,18 +70,18 @@ async function register_all_local() {
     await register_building("0x34cf8a7e000000000000000000000000000000010000ffff", "TOWER", true, "", [
         '0x0', '0x01', '0x0', '0xffff'
     ])
-    await register_building("0x34cf8a7e0000000000000000000000000000fff8000afffe", "HEX_DUMP", false, HEX_DUMP_MESSAGE, [
-        '0x0', '0xfff8', '0x0a', '0xfffe'
+    await register_building("0x34cf8a7e0000000000000000000000000000fff9000afffd", "HEX_DUMP", false, HEX_DUMP_MESSAGE, [
+        '0x0', '0xfff9', '0x0a', '0xfffd'
     ])
     await register_building("0x34cf8a7e000000000000000000000000000000050002fff9", "MEME_GEN", false, MEME_GEN_MESSAGE, [
         '0x0', '0x05', '0x02', '0xfff9'
     ])
-    await register_building("0x34cf8a7e0000000000000000000000000000fffcfffd0007", "SELFIE_POINT", false, SELFIE_POINT_MESSAGE, [
-        '0x0', '0xfffc', '0xfffd', '0x07'
+    await register_building("0x34cf8a7e0000000000000000000000000000fffbfffe0007", "SELFIE_POINT", false, SELFIE_POINT_MESSAGE, [
+        '0x0', '0xfffb', '0xfffe', '0x07'
     ])
 }
 
-// register_all()
-register_all_local();
+register_all()
+// register_all_local();
 
 
