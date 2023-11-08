@@ -8,8 +8,8 @@ let perform_function = false;
 let first_click_in = true;
 let confirmed = false;
 
-// let ENDPOINT = "http://localhost:8082"
-let ENDPOINT = "https://ds-api.tonk.gg"
+let ENDPOINT = "http://localhost:8082"
+// let ENDPOINT = "https://ds-api.tonk.gg"
 
 async function getGame() {
     try {
@@ -67,7 +67,7 @@ async function getLastRoundResult(game) {
         return JSON.parse(text);
     } catch (e) {
         console.log(e);
-    }
+}
 }
 
 async function registerPlayer(id, mobileUnitId, displayName, hash, secret) {
@@ -146,11 +146,11 @@ function reasonToPlaintext(p) {
     console.log(p);
     const { reason, player } = p; 
     if (reason == "BuggedOut") {
-        return `has been eliminated and ${player.role == "Bugged" ? 'was an evil beaver' : 'was an innocent beaver'}`;
+        return `has been eliminated and ${player.role == "Bugged" ? 'was an evil unit' : 'was a noble unit'}`;
     } else if (reason == "VotedOut") {
-        return `has been voted out and ${player.role == "Bugged" ? 'was an evil beaver' : 'was an innocent beaver'}`;
+        return `has been voted out and ${player.role == "Bugged" ? 'was an evil unit' : 'was a noble unit'}`;
     } else if (reason == "Inaction") {
-        return `was ${player.role == "Bugged" ? 'an evil beaver' : 'an innocent beaver'} and has been eliminated due to inaction`
+        return `was ${player.role == "Bugged" ? 'an evil unit' : 'a noble unit'} and has been eliminated due to inaction`
     } else {
         return "has been swallowed by an error!"
     }
@@ -182,7 +182,7 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
             }
         })
     }
-    let the_other_bugs_html = the_other_bugs.length > 0 ? `<p> Pssst, the other corrupted are: 
+    let the_other_bugs_html = the_other_bugs.length > 0 ? `<p style="font-weight: bold"> Pssst, the other evil units are: 
         ${the_other_bugs.map((bugs,i) => {
             if (i == 0) {
                 return bugs.display_name;
@@ -213,11 +213,11 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
                 ${the_other_bugs_html}
                 </br>
                 ${player.used_action == "TaskComplete" ? (
-                    `<p> Ok, great work you evil beaver you. Now, try to act normal!`
+                    `<p> Ok, great work you evil unit you. Now, try to act normal!`
                 ) : player.used_action == "ReturnToTower" ? (
                     `<p> You did the attack. Now you must return to the tower to confirm the dastardly deed.`
                 ) : (
-                    `<p> Objective: ${task.destination.task_message} </p></br>${
+                    `<p> <span style="font-weight: bold">Objective:</span> ${task.destination.task_message} </p></br>${
                         player.proximity.immune ? (
                             "<p> Your attack power is useless within 3 tiles of the Tower </p> "
                         ) : (
@@ -238,16 +238,16 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
                 ${task.complete ? (
                     `<p> Objective Complete! Take a well-deserved rest until the next round </p>`
                 ) : task.dropped_off_second ? (
-                    `<p> Objective: Return to the Tower to complete the task! </p>`
+                    `<p> <span style="font-weight: bold">Objective:</span> Return to the Tower to complete the task! </p>`
                 ) : task.dropped_off ? (
-                    `<p> Now go to the second destination: </p>
+                    `<p style="font-weight: bold"> Now go to the second destination: </p>
                     <p> At the building ${second_directions.at} of the tower, ${second_directions.with}! </p>
-                    <p> Objective: ${task.second_destination.task_message} </p>`
+                    <p> <span style="font-weight: bold">Objective:</span> ${task.second_destination.task_message} </p>`
                 ) : (
                     `
-                    <p> Go to your first destination: </p>
+                    <p style="font-weight: bold"> Go to your first destination: </p>
                     <p> At the building ${directions.at} of the tower, ${directions.with}! </p>
-                    <p> Objective: ${task.destination.task_message} </p>`
+                    <p> <span style="font-weight: bold">Objective:</span> ${task.destination.task_message} </p>`
                 )}
                 <br/>
                 <p> [Failure will result in your deletion. Thank you for your cooperation.] </p>
@@ -268,7 +268,7 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
             <br/>
             ${player.role && player.role == "Bugged" ? `${the_other_bugs_html}</br>` : ""}
             <p> Go to the tower and submit your vote! </p> <br/>
-            <p> Results of the last task round: </p>
+            <p style="font-weight: bold"> Results of the last task round: </p>
             ${lastRoundResult.eliminated && lastRoundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion.</p>"}
             ${lastRoundResult.eliminated && lastRoundResult.eliminated.length > 0 ? lastRoundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p)}</p>`) : ""}
             <br/>
@@ -280,7 +280,7 @@ function formatHtml(status, game, player, players, task, lastRoundResult) {
             <h3>Time remaining: ${game.time.timer}</h3>
             ${player.role && player.role == "Bugged" ? `${the_other_bugs_html}</br>` : ""}
             <br/>
-            <p> The tower is announcing the result </p>
+            <p style="font-weight: bold"> The tower is announcing the result </p>
         `;
     } else if (status == "End") {
         return `
@@ -381,7 +381,7 @@ export default async function update(params) {
 
     let playerEliminated = false;
     if (status == "VoteResult") {
-        result = await getResult();
+        let result = await getResult();
         playerEliminated = result.eliminated && result.eliminated.findIndex(p => p.player.id == tonkPlayer.id) >= 0;
     }
 
@@ -438,7 +438,7 @@ export default async function update(params) {
     }
 
     if (status == "Vote") {
-        lastRoundResult = getLastRoundResult(game);
+        lastRoundResult = await getLastRoundResult(game);
     }
 
     return {

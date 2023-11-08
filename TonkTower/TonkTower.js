@@ -8,8 +8,8 @@ let wants_to_start = false;
 let cast_vote = false;
 let saved_vote_id = null;
 
-// let ENDPOINT = "http://localhost:8082"
-let ENDPOINT = "https://ds-api.tonk.gg"
+let ENDPOINT = "http://localhost:8082"
+// let ENDPOINT = "https://ds-api.tonk.gg"
 
 async function getGame() {
     try {
@@ -134,16 +134,16 @@ async function getPlayer(id) {
 function gameResultToText(game) {
     const { win_result, corrupted_players } = game;
     if (win_result == "Thuggery") {
-        return "The corrupted won by being the majority!"
+        return "The evil units won by being the majority!"
     } else if (win_result == "Democracy") {
         //fail gracefully
         return `The taskers have won because they voted out ${corrupted_players ? (
             corrupted_players.map((p, i) => `${i == 0 ? "" : ", "}${p.display_name}`).join("") + corrupted_players.length > 1 ? (
-                " who were the corrupted beavers") : " who was the corrupted beaver") : "the corrupted beavers"}!`
+                " who were the evil units") : " who was the evil unit") : "the evil units"}!`
     } else if (win_result == "Perfection") {
         return "The taskers have won because they performed all their tasks!"
     } else if (win_result == "Armageddon") {
-        return "Beavergeddon has descended upon your kind. There is no one left."
+        return "unitgeddon has descended upon your kind. There is no one left."
     } else {
         return "The game is over, but I don't know why!"
     }
@@ -152,11 +152,11 @@ function reasonToPlaintext(p) {
     console.log(p);
     const { reason, player } = p; 
     if (reason == "BuggedOut") {
-        return `has been eliminated and ${player.role == "Bugged" ? 'was corrupted' : 'was an innocent beaver'}`;
+        return `has been eliminated and ${player.role == "Bugged" ? 'was an evil unit' : 'was a noble unit'}`;
     } else if (reason == "VotedOut") {
-        return `has been voted out and ${player.role == "Bugged" ? 'was corrupted' : 'was an innocent beaver'}`;
+        return `has been voted out and ${player.role == "Bugged" ? 'was an evil unit' : 'was a noble unit'}`;
     } else if (reason == "Inaction") {
-        return `was ${player.role == "Bugged" ? 'corrupted' : 'an innocent beaver'} and has been eliminated due to inaction`
+        return `was ${player.role == "Bugged" ? 'an evil unit' : 'a noble unit'} and has been eliminated due to inaction`
     } else {
         return "has been swallowed by an error!"
     }
@@ -298,12 +298,12 @@ export default async function update(params) {
             <h3> Voting in session </h3>
             <br/>
             ${roundResult.eliminated && roundResult.eliminated.length > 0 ? "<p> Player deletion report: </p><br/>" : "<p>Somehow, you all have avoided deletion.</p>"}
-            ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p.player)}</p>`)}
+            ${roundResult.eliminated && roundResult.eliminated.map((p) => `<p>${p.player.display_name} ${reasonToPlaintext(p)}</p>`)}
             <br/>
             <p> Number of tasks completed: ${roundResult.tasks_completed ? roundResult.tasks_completed.length : 0}</p>
             <br/>
             <br/>
-            <p> Cast your vote to identify and eliminate the corrupted </p>
+            <p> Cast your vote to identify and eliminate the evil units </p>
             <br />
             <label>VOTE</label>
             `;
@@ -356,7 +356,7 @@ export default async function update(params) {
             ${players.length == 0 ? (
                 ""
             ) : (
-                "<p> I'm happy to report the following beavers have avoided deletion: "
+                "<p> I'm happy to report the following units have avoided deletion: "
             )}
             ${players.map((p, i) => (i == 0 ? "" : ", ") + `${p.display_name}`)}.
         `;

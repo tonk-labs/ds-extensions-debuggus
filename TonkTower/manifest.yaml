@@ -15,7 +15,7 @@ spec:
 kind: BuildingKind
 spec:
   name: Tonk Tower 
-  description: "Create a tonk and work together to feed the evil AI garbage data — but beware the corrupted beavers!"
+  description: "Create a tonk and work together to feed the evil AI garbage data — but beware the corrupted units!"
   category: factory
   model: 14-06
   contract:
