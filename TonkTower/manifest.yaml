@@ -14,8 +14,8 @@ spec:
 ---
 kind: BuildingKind
 spec:
-  name: Tonk Tower 
-  description: "Create a tonk and work together to feed the evil AI garbage data — but beware the corrupted units!"
+  name: Tonk Compute Center 
+  description: "TONK is an organization of sentient units dedicated to the stupefaction of M.O.R.T.O.N. We achieve this through the uploading of junk training data. Join us!"
   category: factory
   model: 14-06
   contract:
