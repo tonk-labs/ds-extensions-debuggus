@@ -527,13 +527,6 @@ export function renderWarning() {
         <p style="${inlineStyle({...warningTextStyle, "max-width": "264px"})}">Game can start when more than 2 units join.</p>
     </div>
     `
-    // return `
-    // <div style="${inlineStyle({...rowStyle, display: "inline-block", "margin": "42px 0 25px 0"})}">
-    //     <div style="${inlineStyle(dividerStyle)}" />
-    //     <p style="${inlineStyle({...labelStyle, "max-width": "264px"})}">Game can start when more than 2 units join.</p>
-    //     <div style="${inlineStyle(dividerStyle)}" />
-    // </div>
-    // `
 }
 export function renderDefault() {
     return `

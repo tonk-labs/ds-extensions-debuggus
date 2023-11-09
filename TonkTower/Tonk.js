@@ -558,7 +558,7 @@ const roleTextStyle = {
     height: "53px",
     top: 0,
     position: "absolute",
-    margin: 0,
+    margin: "0 0 0 5px",
     padding: "10px",
     width: "100%"
 }
@@ -627,6 +627,82 @@ const timeTextStyle = {
     "text-align": "center"
 }
 
+const warningTextStyle = {
+    color: "#A19BAD",
+    "font-family": "Recursive, monospace",
+    "font-size": "18px",
+    "font-weight": "500",
+    "text-align": "center"
+}
+
+let nearbyPlayersContainer = {
+    position: 'fixed',
+    display: 'inline-block',
+    bottom: '3.6rem',
+    right: '2.4rem',
+    "min-height": '4rem',
+    padding: '1.2rem',
+    "background-color": 'white',
+    transition: 'bottom 1s ease-in, opacity 0.6s ease-in',
+    "border-radius": "1.2rem",
+    border: "#0D090F 3px solid",
+    "max-width": "350px"
+};
+
+let playerFlexBox = {
+    display: 'flex',
+    position: 'relative',
+    "max-width": "100%",
+    "flex-direction": "row",
+    "flex-wrap": "wrap",
+    "max-height": "265px",
+}
+
+export function renderNearbyPlayers() {
+    return `
+        <div style="${inlineStyle(nearbyPlayersContainer)}">
+            <p style="${inlineStyle({...labelStyle, "max-width": "100%"})}">Nearby Units</p>
+            <p style="${inlineStyle({...warningTextStyle, width: "100%", "text-align": "left"})}">Units within this range are a danger to you.</p>
+            <div style="${inlineStyle(playerFlexBox)}">
+                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
+                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
+                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
+                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
+                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
+                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
+                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
+                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
+                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
+            </div>
+        </div>
+    `
+}
+
+export function renderInformation() {
+    return `
+    <div style="${inlineStyle({...rowStyle, height: "175px", margin: "0px 0 25px 0", display: "flex", "align-items": "center", "justify-content": "center", "max-height": "220px"})}">
+        <p style="${inlineStyle({...warningTextStyle, "max-width": "264px"})}">waiting to receive instructions...</p>
+    </div>
+    `
+}
+
+export function renderLastRoundInformation() {
+    return `
+<div style="${inlineStyle(rowStyle)}">
+    <div style="${inlineStyle(boxAndLabelStyle)}">
+        <p style="${inlineStyle({...labelStyle, width: "100%"})}">LAST ROUND SUMMARY</p>
+        <div style="${inlineStyle({...boxStyle, ...statusStyle, "overflow-y": "scroll"})}"> 
+            <p style="${inlineStyle(entryStyle)}">Goblin Oats — failed to act.</p>
+            <p style="${inlineStyle(entryStyle)}">Goblin Oats — failed to act.</p>
+            <p style="${inlineStyle(entryStyle)}">Goblin Oats — failed to act.</p>
+            <p style="${inlineStyle(entryStyle)}">Goblin Oats — failed to act.</p>
+            <p style="${inlineStyle(entryStyle)}">Goblin Oats — failed to act.</p>
+        </div>
+    </div>
+</div>
+    `
+}
+
 export function renderDirections() {
     return `
     <div style="${inlineStyle(rowStyle)}">
@@ -637,7 +713,6 @@ export function renderDirections() {
             </div>
         </div>
     </div>
-
     `
 }
 
@@ -656,7 +731,7 @@ export function renderDefault() {
         <div style="${inlineStyle({...screenGradientStyle, ...miniGradient})}"></div>
         <div style="${inlineStyle({...upperGlareStyle, ...miniGlare })}"></div>
         <div style="${inlineStyle({...lowerGlareStyle, ...miniGlare, top: "36px" })}"></div>
-        <p style="${inlineStyle({...bigTextStyle, ...roleTextStyle})}">&lt;ROLE&nbsp;PENDING....&gt;</p>
+        <p style="${inlineStyle({...bigTextStyle, ...roleTextStyle})}">...ROLE...PENDING..</p>
     </div>
 </div>
 <div style="${inlineStyle({...screenRow, transform: "translate(254px, 1px)", height: "106px"})}">
@@ -691,8 +766,10 @@ export default async function update(params) {
                         html: `
                         <div style="${inlineStyle(containerStyle)}">
                             ${renderDefault()}
-                            ${renderDirections()}
+                            ${renderLastRoundInformation()}
+                            ${renderInformation()}
                         </div>
+                        ${renderNearbyPlayers()}
                         `,
                     },
                 ],
