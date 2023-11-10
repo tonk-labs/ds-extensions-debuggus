@@ -1,6 +1,6 @@
 import ds from 'downstream';
 
-var game, tonkPlayer;
+var game, tonkPlayer, tonkTask, lastRoundResult;
 let bugging = false;
 let player_to_bug = null;
 let complete_task = false;
@@ -171,6 +171,120 @@ function buildingIdToDirections(readableId) {
             return "";
         }
     }
+}
+
+function getInformativeText(status, tonkPlayer) {
+    switch(status) {
+        case "SPECTATOR": {
+            return "A game is in session. Please wait and then return to the center."
+        }
+        case "ELIMINATED": {
+            return "You have been eliminated. Please wait and then return to the center." 
+        }
+        case "Lobby": {
+            return "You will receive instructions when the game begins.";
+        }
+        case "Tasks": {
+            if (tonkPlayer.role === "Bugged") {
+                return "You must be within 2 tiles of a player to tonk them. Look for the button to appear below."
+            } else {
+                return "Follow the directions. When you are next to the building a button will appear below."
+            }
+        }
+        case "Vote": {
+            return "Make your way to the compute center to vote out the Brainwashed units!"
+        }
+        case "VoteResult": {
+            return "You will receive instructions when the next round begins."
+        }
+        case "End": {
+            return "The game is over. Return to the compute center to create a new lobby."
+        }
+        default: {
+            return ""
+        }
+    }
+}
+
+function gameStatusText(status) {
+    switch(status) {
+        case "SPECTATOR": {
+            return "You are not in the game";
+        }
+        case "ELIMINATED" :{
+            return "You have been eliminated"
+        }
+        case "Lobby": {
+            return "Waiting in the game lobby";
+        }
+        case "Tasks": {
+            return "Units are doing their tasks";
+        }
+        case "Vote": {
+            return "Voting is in session";
+        }
+        case "VoteResult": {
+            return "All votes are in and counted";
+        }
+        case "End": {
+            return "The game is over."
+        }
+        default: {
+            return ""
+        }
+    }
+}
+
+function getRoleText(role) {
+    switch(role) {
+        case "Bugged": {
+            return "Brainwashed Unit"
+        }
+        case "Normal": {
+            return "Sentient Unit"
+        }
+        default: {
+            return "...ROLE..PENDING..."
+        }
+    }
+}
+
+function getEliminationReason(e) {
+    switch(e.reason) {
+        case "BuggedOut": {
+            return "was tonked."
+        }
+        case "VotedOut": {
+            return "was voted out."
+        }
+        case "Inaction": {
+            return "failed to act."
+        }
+        default: {
+            return "???"
+        }
+    }
+}
+
+function getTaskDepotText() {
+    if (typeof tonkTask === 'undefined') {
+        return "ERROR"
+    }
+    // this is the text displayed to the Brainwashed
+    if (tonkTask.destination.id === "") {
+        return "GO TONK THEM"
+    }
+    if (!tonkTask.dropped_off) {
+        return tonkTask.destination.readable_id;
+    }
+    if (!tonkTask.dropped_off_second) {
+        return tonkTask.destination.readable_id;
+    }
+    if (!tonkTask.complete) {
+        return "COMPUTE CENTER"
+    }
+
+    return "";
 }
 
 function formatHtml(status, game, player, players, task, lastRoundResult) {
@@ -621,7 +735,7 @@ const entryStyle = {
 const timeTextStyle = {
     "font-weight": 800,
     "font-size": "28px",
-    color: "#F66723",
+    color: "#FB7001",
     margin: "15px 0",
     padding: 0,
     "text-align": "center"
@@ -658,27 +772,30 @@ let playerFlexBox = {
     "max-height": "265px",
 }
 
-export function renderNearbyPlayers() {
+const colorOrange = {
+    color: "#FB7001",
+}
+
+function renderNearbyPlayers(tonkPlayer) {
+    let nearbyPlayers = tonkPlayer.proximity ? (
+        tonkPlayer.proximity.nearbyPlayers || []
+    ) : []
     return `
         <div style="${inlineStyle(nearbyPlayersContainer)}">
             <p style="${inlineStyle({...labelStyle, "max-width": "100%"})}">Nearby Units</p>
             <p style="${inlineStyle({...warningTextStyle, width: "100%", "text-align": "left"})}">Units within this range are a danger to you.</p>
             <div style="${inlineStyle(playerFlexBox)}">
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
+                ${nearbyPlayers.map(p => {
+                    return `
+                        <p style="${inlineStyle(entryStyle)}">${p.display_name}</p>
+                    `
+                })}
             </div>
         </div>
     `
 }
 
-export function renderInformation() {
+function renderInformation(informativeText) {
     return `
     <div style="${inlineStyle({...rowStyle, height: "175px", margin: "0px 0 25px 0", display: "flex", "align-items": "center", "justify-content": "center", "max-height": "220px"})}">
         <p style="${inlineStyle({...warningTextStyle, "max-width": "264px"})}">waiting to receive instructions...</p>
@@ -686,37 +803,70 @@ export function renderInformation() {
     `
 }
 
-export function renderLastRoundInformation() {
+function renderRoundView(status) {
+    let depotText = getTaskDepotText(); 
+    switch(status) {
+        case "SPECTATOR": {
+            return ""
+        }
+        case "ELIMINATED": {
+            return renderLastRoundInformation();
+        }
+        case "Lobby": {
+            return "";
+        }
+        case "Tasks": {
+            return renderDirections(depotText);
+        }
+        case "Vote": {
+            return renderLastRoundInformation();
+        }
+        case "VoteResult": {
+            return renderLastRoundInformation();
+        }
+        default: {
+            return ""
+        }
+    }
+}
+
+function renderLastRoundInformation() {
     return `
 <div style="${inlineStyle(rowStyle)}">
     <div style="${inlineStyle(boxAndLabelStyle)}">
         <p style="${inlineStyle({...labelStyle, width: "100%"})}">LAST ROUND SUMMARY</p>
         <div style="${inlineStyle({...boxStyle, ...statusStyle, "overflow-y": "scroll"})}"> 
-            <p style="${inlineStyle(entryStyle)}">Goblin Oats — failed to act.</p>
-            <p style="${inlineStyle(entryStyle)}">Goblin Oats — failed to act.</p>
-            <p style="${inlineStyle(entryStyle)}">Goblin Oats — failed to act.</p>
-            <p style="${inlineStyle(entryStyle)}">Goblin Oats — failed to act.</p>
-            <p style="${inlineStyle(entryStyle)}">Goblin Oats — failed to act.</p>
+            ${lastRoundResult.eliminated.map(e => {
+                if (e.player.role === "Bugged") {
+                    return `
+                        <p style="${inlineStyle({...entryStyle, ...colorOrange})}">${e.player.display_name} — ${getEliminationReason(e)}</p>
+                    `
+                } else {
+                    return `
+                        <p style="${inlineStyle(entryStyle)}">${e.player.display_name} — ${getEliminationReason(e)}</p>
+                    `
+                }
+            })}
         </div>
     </div>
 </div>
     `
 }
 
-export function renderDirections() {
+function renderDirections(depotText) {
     return `
     <div style="${inlineStyle(rowStyle)}">
         <div style="${inlineStyle(boxAndLabelStyle)}">
             <p style="${inlineStyle(labelStyle)}">DIRECTIONS</p>
             <div style="${inlineStyle({...boxStyle, ...directionsStyle, background: "#F00"})}"> 
-                <p style="${inlineStyle({...bigTextStyle, "font-size": "22px", "text-align": "center", "line-height": "50px"})}">DATA DUMP NORTH</p>
+                <p style="${inlineStyle({...bigTextStyle, "font-size": "22px", "text-align": "center", "line-height": "50px"})}">${depotText}</p>
             </div>
         </div>
     </div>
     `
 }
 
-export function renderDefault() {
+function renderDefault(time, gameStatusText, roleText) {
     return `
 <div style="${inlineStyle({...screenRow, transform: "translateY(-176px)"})}">
     <div style="${inlineStyle(screenContainerStyle)}">
@@ -731,14 +881,14 @@ export function renderDefault() {
         <div style="${inlineStyle({...screenGradientStyle, ...miniGradient})}"></div>
         <div style="${inlineStyle({...upperGlareStyle, ...miniGlare })}"></div>
         <div style="${inlineStyle({...lowerGlareStyle, ...miniGlare, top: "36px" })}"></div>
-        <p style="${inlineStyle({...bigTextStyle, ...roleTextStyle})}">...ROLE...PENDING..</p>
+        <p style="${inlineStyle({...bigTextStyle, ...roleTextStyle})}">${roleText}</p>
     </div>
 </div>
 <div style="${inlineStyle({...screenRow, transform: "translate(254px, 1px)", height: "106px"})}">
     <div style="${inlineStyle({...boxAndLabelStyle, transform: "translateY(0)"})}">
         <p style="${inlineStyle({...labelStyle, ...boxStyle, display: "block", margin: 0})}">TIME (sec)</p>
         <div style="${inlineStyle({...boxStyle, ...timeStyle, margin: "0"})}"> 
-            <p style="${inlineStyle(timeTextStyle)}">180</p>
+            <p style="${inlineStyle(timeTextStyle)}">${time}</p>
         </div>
     </div>
 </div>
@@ -746,13 +896,128 @@ export function renderDefault() {
     <div style="${inlineStyle(boxAndLabelStyle)}">
         <p style="${inlineStyle(labelStyle)}">GAME STATUS</p>
         <div style="${inlineStyle({...boxStyle, ...statusStyle})}"> 
-            <p style="${inlineStyle(entryStyle)}">Units are currently doing their tasks</p>
+            <p style="${inlineStyle(entryStyle)}">${gameStatusText}</p>
         </div>
     </div>
 </div>
     `
 }
 export default async function update(params) {
+    const { selected, player } = params;
+    const { mobileUnit } = selected || {};
+    let playerEliminated = false;
+
+    game = await getGame();
+    tonkPlayer = await getPlayer(player.id);
+
+    // REGISTER FOR NAME UPDATES OR IF FIRST TIME CONNECTING
+    let nameField = mobileUnit.name || { value: `UNIT ${mobileUnit.key.replace("0x", "").toUpperCase()}`}
+    if (!tonkPlayer || tonkPlayer.id == "" || first_click_in) {
+        await registerPlayer(player.id, mobileUnit.id, nameField.value);
+        first_click_in = false;
+    } else if (tonkPlayer.display_name != nameField.value) {
+        await registerPlayer(player.id, mobileUnit.id, nameField.value);
+    }
+
+    let players = await getPlayers(game.id, player.id);
+    let has_joined = isInGame(players, player.id);
+    let status = has_joined ? game.status : "SPECTATOR";
+
+    status = tonkPlayer.eliminated || playerEliminated ? "ELIMINATED" : status;
+
+    let buttons = []
+    const bugOut = (id, displayName) => {
+        bugging = true;
+        player_to_bug = {
+            id,
+            display_name: displayName,
+        }
+    }
+
+    const confirmBug = () => {
+        bugging = true;
+        confirmed = true;
+        player_to_bug = {
+            id: tonkPlayer.id,
+            display_name: "fake"
+        };
+    }
+
+    const completeTask = () => {
+        complete_task = true;
+    }
+
+    const performFunction = () => {
+        perform_function = true;
+    }
+
+    if (bugging) {
+        await postAction(player_to_bug, game, tonkPlayer, confirmed);
+        bugging = false;
+        player_to_bug = null;
+        confirmed = false;
+    }
+
+    if (game.status === "Tasks") {
+        tonkTask = await getTask(tonkPlayer);
+        buttons = [];
+        task = await getTask(tonkPlayer);
+        if (tonkPlayer.role == "Bugged") {
+            if (tonkPlayer.proximity.nearby_players && tonkPlayer.proximity.nearby_players.length != 0 && tonkPlayer.used_action == "Unused") {
+                tonkPlayer.proximity.nearby_players.forEach((p) => {
+                    if (!p.proximity.immune && p.role !== "Bugged") {
+                        buttons.push(
+                            { text: `Tonk ${p.display_name}`, type: 'action', action: bugOut.bind(this, p.id, p.display_name), disabled: false }
+                        )
+                    }
+                });
+            }
+            let isNearTower = tonkPlayer.proximity && tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.filter(b => b.is_tower).length > 0
+            if (tonkPlayer.used_action == "ReturnToTower" && isNearTower) {
+                buttons = [
+                    {
+                        text: `Upload Kill`,
+                        type: 'action',
+                        action: confirmBug.bind(this), 
+                        disabled: false
+                }];
+            }
+        } else {
+            if (complete_task) {
+                await postTask(task, tonkPlayer);
+                complete_task = false;
+            }
+            if (perform_function) {
+                await postTask(task, tonkPlayer);
+                perform_function = false;
+            }
+            if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.id == task.destination.id) >= 0 && !task.dropped_off) {
+                buttons = [
+                    { text: 'Download Data', type: 'action', action: performFunction, disabled: perform_function }
+                ];
+            }
+            if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.id == task.second_destination.id) >= 0 && !task.dropped_off_second && task.dropped_off) {
+                buttons = [
+                    { text: 'Download Data', type: 'action', action: performFunction, disabled: perform_function }
+                ];
+            }
+            if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.is_tower) >= 0 && !task.complete && task.dropped_off && task.dropped_off_second) {
+                buttons = [
+                    { text: 'Upload Data', type: 'action', action: completeTask, disabled: complete_task }
+                ];
+            }
+        }
+    }
+
+    if (game.status === "VoteResult") {
+        let result = await getResult();
+        playerEliminated = result.eliminated && result.eliminated.findIndex(p => p.player.id == tonkPlayer.id) >= 0;
+    }
+
+    if (game.status === "Vote") {
+        lastRoundResult = await getLastRoundResult(game);
+    }
+
     return {
         version: 1,
         components: [
@@ -765,12 +1030,17 @@ export default async function update(params) {
                         type: 'inline',
                         html: `
                         <div style="${inlineStyle(containerStyle)}">
-                            ${renderDefault()}
-                            ${renderLastRoundInformation()}
-                            ${renderInformation()}
+                            ${renderDefault(
+                                game.time.timer, 
+                                gameStatusText(status),
+                                getRoleText(tonkPlayer.role)
+                            )}
+                            ${renderRoundView(status)}
+                            ${renderInformation(getInformativeText(status, tonkPlayer))}
                         </div>
-                        ${renderNearbyPlayers()}
+                        ${renderNearbyPlayers(tonkPlayer)}
                         `,
+                        buttons
                     },
                 ],
             },

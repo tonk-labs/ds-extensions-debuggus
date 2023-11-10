@@ -134,16 +134,13 @@ async function getPlayer(id) {
 function gameResultToText(game) {
     const { win_result, corrupted_players } = game;
     if (win_result == "Thuggery") {
-        return "The evil units won by being the majority!"
+        return "The Brainwashed units have outnumbered the sentient units."
     } else if (win_result == "Democracy") {
-        //fail gracefully
-        return `The taskers have won because they voted out ${corrupted_players ? (
-            corrupted_players.map((p, i) => `${i == 0 ? "" : ", "}${p.display_name}`).join("") + corrupted_players.length > 1 ? (
-                " who were the evil units") : " who was the evil unit") : "the evil units"}!`
+        return "The Sentient have won because they voted out all the Brainwashed." 
     } else if (win_result == "Perfection") {
-        return "The taskers have won because they performed all their tasks!"
+        return "The Sentient have won because they completed all their tasks in one round."
     } else if (win_result == "Armageddon") {
-        return "unitgeddon has descended upon your kind. There is no one left."
+        return "All units have destroyed each other. There is no one left."
     } else {
         return "The game is over, but I don't know why!"
     }
@@ -164,6 +161,57 @@ function reasonToPlaintext(p) {
 
 function findBags(world, mobileUnit) {
     return world.bags.filter((b) => b.equipee && b.equipee.node.id == mobileUnit.id);
+}
+
+function getWarningText(game, players, has_tonk) {
+    if (!has_tonk) {
+        return "You need to craft a tonk to join";
+    }
+    switch(game.status) {
+        case "Lobby": {
+            if (players.length < 2) {
+                return "Game can start when more than 2 units join";
+            }
+        }
+        case "Tasks": {
+            return "Your crafted tonk will show you instructions. Good luck unit!"
+        }
+        case "Vote": {
+            return ""
+        }
+        case "VoteResult": {
+            return ""
+        }
+        case "End": {
+            return gameResultToText(game)
+        }
+        default: {
+            return ""
+        }
+    }
+}
+
+function gameStatusText(status) {
+    switch(status) {
+        case "Lobby": {
+            return "Waiting in the lobby";
+        }
+        case "Tasks": {
+            return "Units are doing their tasks";
+        }
+        case "Vote": {
+            return "Voting is in session";
+        }
+        case "VoteResult": {
+            return "All votes are in and counted";
+        }
+        case "End": {
+            return "The game is over."
+        }
+        default: {
+            return ""
+        }
+    }
 }
 
 // export default async function update(params) {
@@ -472,7 +520,7 @@ const entryStyle = {
 const timeTextStyle = {
     "font-weight": 800,
     "font-size": "28px",
-    color: "#F66723",
+    color: "#FB7001",
     margin: "15px 0",
     padding: 0,
     "text-align": "center"
@@ -499,48 +547,65 @@ const warningTextStyle = {
     "font-weight": "500",
     "text-align": "center"
 }
-
-
-
-
-export function renderEndGame() {
-
+const colorOrange = {
+    color: "#FB7001",
 }
-export function renderVote() {
+
+const buttonStyle = {
+    width: "100%",
+    height: "5rem",
+    "font-size": "1.6rem",
+    "color": "#FB7001",
+    background: "linear-gradient(#E4E1EB,#F7F5FA 35%)",
+    "font-weight": "800",
+    padding: "1.2rem 1.2rem 0 0.8rem",
+    "border-radius": "0.8rem",
+    display: "block",
+    "margin-top": "0.5rem"
+}
+
+
+export function renderVote(players) {
+
     return `
     <div style="${inlineStyle({...rowStyle, "margin-top": "25px"})}">
         <div style="${inlineStyle({...boxAndLabelStyle, display: "block"})}">
             <p style="${inlineStyle({...labelStyle, "max-width": "150px"})}">VOTE UNIT OUT</p>
             <select style="${inlineStyle({...boxStyle, ...selectStyle})}">
-                <option value="1">Test</option>
-                <option value="2">Test2</option>
-                <option value="3">Test3</option>
-                <option value="4">Test4</option>
+                ${players.filter(p => p.id == tonkPlayer.id || p.role == "Bugged").map(p => {
+                    return `
+                        <option value="${p.id}">${p.display_name}</option>
+                    `
+                })}
             </select>
+        </div>
+        <div>
+            <button type="submit" style="${inlineStyle(buttonStyle)}">Cast Vote</button>
         </div>
     </div>
     `
 }
-export function renderWarning() {
+
+export function renderWarning(warningText) {
     return `
     <div style="${inlineStyle({...rowStyle, "margin": "42px 0 25px 0", display: "flex", "align-items": "center", "justify-content": "center", "max-height": "220px"})}">
-        <p style="${inlineStyle({...warningTextStyle, "max-width": "264px"})}">Game can start when more than 2 units join.</p>
+        <p style="${inlineStyle({...warningTextStyle, "max-width": "264px"})}">${warningText}</p>
     </div>
     `
 }
-export function renderDefault() {
+export function renderDefault(time, gameStatusText, players, eliminated) {
     return `
-    <div style="${inlineStyle(rowStyle)}">
+    <div style="${inlineStyle({...rowStyle, display: "flex"})}">
         <div style="${inlineStyle(boxAndLabelStyle)}">
             <p style="${inlineStyle(labelStyle)}">GAME STATUS</p>
             <div style="${inlineStyle({...boxStyle, ...statusStyle})}"> 
-                <p style="${inlineStyle(entryStyle)}">Units are currently doing their tasks</p>
+                <p style="${inlineStyle(entryStyle)}">${gameStatusText}</p>
             </div>
         </div>
         <div style="${inlineStyle({...boxAndLabelStyle, transform: "translateY(0)"})}">
             <p style="${inlineStyle(labelStyle)}">TIME (sec)</p>
             <div style="${inlineStyle({...boxStyle, ...timeStyle})}"> 
-                <p style="${inlineStyle(timeTextStyle)}">180</p>
+                <p style="${inlineStyle(timeTextStyle)}">${time}</p>
             </div>
         </div>
     </div>
@@ -548,21 +613,27 @@ export function renderDefault() {
         <div style="${inlineStyle(boxAndLabelStyle)}">
             <p style="${inlineStyle(labelStyle)}">ACTIVE</p>
             <div style="${inlineStyle({...boxStyle, ...activeUnitsStyle})}"> 
-                <p style="${inlineStyle(entryStyle)}">corporeal humanoid</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
+                ${players.map(p => {
+                    return `
+                    <p style="${inlineStyle(entryStyle)}">${p.display_name}</p>
+                    `
+                })}
             </div>
         </div>
         <div style="${inlineStyle(boxAndLabelStyle)}">
             <p style="${inlineStyle(labelStyle)}">ELIMINATED</p>
             <div style="${inlineStyle({...boxStyle, ...eliminatedStyle})}"> 
-                <p style="${inlineStyle(entryStyle)}">corporeal humanoid</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
-                <p style="${inlineStyle(entryStyle)}">Goblin Oats</p>
+                ${eliminated.map(e => {
+                    if (e.player.role === "Bugged") {
+                        return `
+                        <p style="${inlineStyle({...entryStyle, ...colorOrange})}">${e.player.display_name}</p>
+                        `
+                    } else {
+                        return `
+                        <p style="${inlineStyle(entryStyle)}">${e.player.display_name}</p>
+                        `
+                    }
+                })}
             </div>
         </div>
     </div>
@@ -572,18 +643,19 @@ export function renderDefault() {
 
 
 export default async function update(params) {
-        const { selected, player, world } = params; 
+    let buttons = [];
+    let submit;
 
-//     // console.log(params);
+    const { selected, player, world } = params; 
+    // console.log(params);
     const { mobileUnit } = selected || {};
     console.log("building id: ", selected.mapElement.id);
     console.log("selected coords: ", selected.tiles[0].coords);
     // console.log(player);
+
     const buildingId = selected.mapElement.id;
     let bags = findBags(world, mobileUnit);
     const has_tonk = bags[0].slots.findIndex(b => b.item && b.item.name.value == 'Tonk') >= 0 || bags[1].slots.findIndex(b => b.item && b.item.name.value == 'Tonk') >= 0
-
-    let buttons = [];
     const craft = () => {
         if (!mobileUnit) {
             ds.log('no selected engineer');
@@ -603,9 +675,70 @@ export default async function update(params) {
 
         ds.log('Tonk!');
     };
+
     if (!has_tonk) {
         buttons.push({ text: 'Craft Tonk', type: 'action', action: craft, disabled: false })
     }
+
+    game = await getGame();
+    players = await getPlayers(game.id, player.id);
+
+    if (wants_to_join) {
+        try {
+            await requestJoin(game.id, player.id)
+            wants_to_join = false;
+        } catch (e) {
+            console.log(e)
+        }
+    }
+
+    if (wants_to_start) {
+        try {
+            await requestStart()
+            wants_to_start = false;
+        } catch (e) {
+            console.log(e)
+        }
+    }
+    const joinGame = () => {
+        wants_to_join = true;
+    }
+
+    const startGame = () => {
+        wants_to_start = true;
+    }
+
+    if (cast_vote) {
+        await sendVote(saved_vote_id, player);
+        cast_vote = false;
+        saved_vote_id = null;
+    }
+
+    const player_is_in_game = players ? players.findIndex(p => p.id == player.id) >= 0 : [];
+    if (game.status == "Lobby") {
+        if (!player_is_in_game && !!has_tonk && game.status == "Lobby") {
+            buttons.push({ text: 'Join Game', type: 'action', action: joinGame, disabled: !has_tonk });
+        }
+        if (players.length >= MIN_NUMBER_PLAYERS && player_is_in_game) {
+            buttons.push({ text: 'Start Game', type: 'action', action: startGame, disabled: !has_tonk || !player_is_in_game });
+        }
+    } 
+
+    const onCastVote = (values) => {
+        cast_vote = true;
+        saved_vote_id = values.vote;
+    };
+
+    // if (game.status == "Tasks") {
+    // }  
+    if (game.status == "Vote") {
+        submit = onCastVote;
+    }  
+    // if (game.status == "VoteResult") {
+    // } 
+
+    const warningText = getWarningText(game, players, has_tonk);
+
     return {
         version: 1,
         components: [
@@ -618,11 +751,12 @@ export default async function update(params) {
                         type: 'inline',
                         html: `
                         <div style="${inlineStyle(containerStyle)}">
-                            ${renderDefault()}
-                            ${renderWarning()}
+                            ${renderDefault(game.time.timer, gameStatusText(game.status), players, game.eliminated || [])}
+                            ${warningText === "" ? "" : renderWarning(warningText)}
                         </div>
                         `,
-                        buttons
+                        buttons,
+                        submit
                     },
                 ],
             },
