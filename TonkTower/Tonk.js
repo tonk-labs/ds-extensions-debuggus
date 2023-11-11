@@ -8,8 +8,8 @@ let perform_function = false;
 let first_click_in = true;
 let confirmed = false;
 
-let ENDPOINT = "http://localhost:8082"
-// let ENDPOINT = "https://ds-api.tonk.gg"
+// let ENDPOINT = "http://localhost:8082"
+let ENDPOINT = "https://ds-api.tonk.gg"
 
 async function getGame() {
     try {
@@ -143,7 +143,6 @@ async function postAction(target, game, player, confirmed) {
 }
 
 function reasonToPlaintext(p) {
-    console.log(p);
     const { reason, player } = p; 
     if (reason == "BuggedOut") {
         return `has been eliminated and ${player.role == "Bugged" ? 'was an evil unit' : 'was a noble unit'}`;
@@ -176,7 +175,7 @@ function buildingIdToDirections(readableId) {
 function getInformativeText(status, tonkPlayer) {
     switch(status) {
         case "SPECTATOR": {
-            return "A game is in session. Please wait and then return to the center."
+            return "You are a spectator. You may join when game is in the lobby."
         }
         case "ELIMINATED": {
             return "You have been eliminated. Please wait and then return to the center." 
@@ -186,16 +185,28 @@ function getInformativeText(status, tonkPlayer) {
         }
         case "Tasks": {
             if (tonkPlayer.role === "Bugged") {
-                return "You must be within 2 tiles of a player to tonk them. Look for the button to appear below."
+                let isNearTower = tonkPlayer.proximity && tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.filter(b => b.is_tower).length > 0
+                let isNearPlayer = tonkPlayer.proximity && tonkPlayer.proximity.nearby_players && tonkPlayer.proximity.nearby_players.length > 0
+                if (isNearTower) {
+                    return "You cannot tonk players within 3 tiles of the compute center"
+                }
+
+                if (!isNearPlayer) {
+                    return "You must be within 2 tiles of a player to tonk them. Look for the button to appear below."
+                }
             } else {
-                return "Follow the directions. When you are next to the building a button will appear below."
+                if (tonkTask.complete) {
+                    return "You have performed your duty. Waiting for next instructions..."
+                } else {
+                    return "Follow the directions. When you are next to the building a button will appear below."
+                }
             }
         }
         case "Vote": {
             return "Make your way to the compute center to vote out the Brainwashed units!"
         }
         case "VoteResult": {
-            return "You will receive instructions when the next round begins."
+            return "Waiting for next instructions..."
         }
         case "End": {
             return "The game is over. Return to the compute center to create a new lobby."
@@ -206,7 +217,8 @@ function getInformativeText(status, tonkPlayer) {
     }
 }
 
-function gameStatusText(status) {
+function gameStatusText(game) {
+    const { status, win_result } = game;
     switch(status) {
         case "SPECTATOR": {
             return "You are not in the game";
@@ -215,7 +227,7 @@ function gameStatusText(status) {
             return "You have been eliminated"
         }
         case "Lobby": {
-            return "Waiting in the game lobby";
+            return "Game has an open lobby";
         }
         case "Tasks": {
             return "Units are doing their tasks";
@@ -227,7 +239,11 @@ function gameStatusText(status) {
             return "All votes are in and counted";
         }
         case "End": {
-            return "The game is over."
+            if (win_result === "Thuggery") {
+                return "Brainwashed win"
+            } else {
+                return "Sentient win"
+            }
         }
         default: {
             return ""
@@ -261,27 +277,36 @@ function getEliminationReason(e) {
             return "failed to act."
         }
         default: {
-            return "???"
+            return "no news to report."
         }
     }
 }
 
-function getTaskDepotText() {
+function getTaskDepotText(player) {
     if (typeof tonkTask === 'undefined') {
         return "ERROR"
     }
     // this is the text displayed to the Brainwashed
     if (tonkTask.destination.id === "") {
-        return "GO TONK THEM"
+        if (player.used_action === "ReturnToTower") {
+            return "COMPUTE CENTER"
+        } else if (player.used_action === "TaskComplete") {
+            return "GOOD JOB UNIT"
+        } else {
+            return "TONK A UNIT"
+        }
     }
     if (!tonkTask.dropped_off) {
         return tonkTask.destination.readable_id;
     }
     if (!tonkTask.dropped_off_second) {
-        return tonkTask.destination.readable_id;
+        return tonkTask.second_destination.readable_id;
     }
     if (!tonkTask.complete) {
         return "COMPUTE CENTER"
+    }
+    if (tonkTask.complete) {
+        return "GOOD JOB UNIT"
     }
 
     return "";
@@ -672,7 +697,7 @@ const roleTextStyle = {
     height: "53px",
     top: 0,
     position: "absolute",
-    margin: "0 0 0 5px",
+    "text-align": "center",
     padding: "10px",
     width: "100%"
 }
@@ -683,6 +708,8 @@ const rowStyle = {
     height: "120px",
     "margin-top": "12px"
 }
+// button-styles__TextButton-sc-7fe74a04-0 button-styles__ActionButton-sc-7fe74a04-1 kEuMYh jQZoSm
+// sc-7fe74a04-0 sc-7fe74a04-1 gpXETn jzrUbI
 const labelStyle = {
     "font-family": "Recursive, monospace",
     "font-size": "18px",
@@ -775,10 +802,22 @@ let playerFlexBox = {
 const colorOrange = {
     color: "#FB7001",
 }
+const colorPurple = {
+    color: "#9C74FD"
+}
+const colorGreen = {
+    color: "#32B25A"
+}
+const colorPink = {
+    color: "#E76CC9"
+}
+const colorBlue = {
+    color: "#2DAEE0"
+}
 
 function renderNearbyPlayers(tonkPlayer) {
     let nearbyPlayers = tonkPlayer.proximity ? (
-        tonkPlayer.proximity.nearbyPlayers || []
+        tonkPlayer.proximity.nearby_players || []
     ) : []
     return `
         <div style="${inlineStyle(nearbyPlayersContainer)}">
@@ -789,7 +828,7 @@ function renderNearbyPlayers(tonkPlayer) {
                     return `
                         <p style="${inlineStyle(entryStyle)}">${p.display_name}</p>
                     `
-                })}
+                }).join("\n")}
             </div>
         </div>
     `
@@ -798,13 +837,13 @@ function renderNearbyPlayers(tonkPlayer) {
 function renderInformation(informativeText) {
     return `
     <div style="${inlineStyle({...rowStyle, height: "175px", margin: "0px 0 25px 0", display: "flex", "align-items": "center", "justify-content": "center", "max-height": "220px"})}">
-        <p style="${inlineStyle({...warningTextStyle, "max-width": "264px"})}">waiting to receive instructions...</p>
+        <p style="${inlineStyle({...warningTextStyle, "max-width": "264px"})}">${informativeText}</p>
     </div>
     `
 }
 
-function renderRoundView(status) {
-    let depotText = getTaskDepotText(); 
+function renderRoundView(status, player) {
+    let depotText = getTaskDepotText(player); 
     switch(status) {
         case "SPECTATOR": {
             return ""
@@ -824,6 +863,9 @@ function renderRoundView(status) {
         case "VoteResult": {
             return renderLastRoundInformation();
         }
+        case "End": {
+            return renderLastRoundInformation();
+        }
         default: {
             return ""
         }
@@ -831,6 +873,13 @@ function renderRoundView(status) {
 }
 
 function renderLastRoundInformation() {
+    if (!lastRoundResult.eliminated || lastRoundResult.eliminated.length == 0) {
+        lastRoundResult.eliminated = [{
+            player: {
+                display_name: "N/A"
+            }
+        }]
+    }
     return `
 <div style="${inlineStyle(rowStyle)}">
     <div style="${inlineStyle(boxAndLabelStyle)}">
@@ -846,19 +895,51 @@ function renderLastRoundInformation() {
                         <p style="${inlineStyle(entryStyle)}">${e.player.display_name} — ${getEliminationReason(e)}</p>
                     `
                 }
-            })}
+            }).join("\n")}
         </div>
     </div>
 </div>
     `
 }
 
+function getColorForDestination(destination) {
+    switch(destination) {
+        case "DATA DUMP NORTH": {
+            return colorGreen.color;
+        }
+        case "DATA DUMP WEST": {
+            return colorPurple.color;
+        }
+        case "DATA DUMP EAST": {
+            return colorPink.color;
+        }
+        case "COMPUTE CENTER": {
+            return colorBlue.color;
+        }
+        default: {
+            return colorOrange.color;
+        }
+    }
+}
+
+function getColorForBug() {
+    if (tonkPlayer.used_action === "ReturnToTower") {
+        return colorBlue.color;
+    } else if (tonkPlayer.used_action === "TaskComplete") {
+        return colorOrange.color; 
+    } else {
+        return "#EC5C61";
+    }
+}
+
 function renderDirections(depotText) {
+    let color = getColorForDestination(depotText);
+    const colorStyle = tonkTask.destination.id === "" ? { background: getColorForBug() } : { background: color };
     return `
     <div style="${inlineStyle(rowStyle)}">
         <div style="${inlineStyle(boxAndLabelStyle)}">
             <p style="${inlineStyle(labelStyle)}">DIRECTIONS</p>
-            <div style="${inlineStyle({...boxStyle, ...directionsStyle, background: "#F00"})}"> 
+            <div style="${inlineStyle({...boxStyle, ...directionsStyle, ...colorStyle})}"> 
                 <p style="${inlineStyle({...bigTextStyle, "font-size": "22px", "text-align": "center", "line-height": "50px"})}">${depotText}</p>
             </div>
         </div>
@@ -961,7 +1042,6 @@ export default async function update(params) {
     if (game.status === "Tasks") {
         tonkTask = await getTask(tonkPlayer);
         buttons = [];
-        task = await getTask(tonkPlayer);
         if (tonkPlayer.role == "Bugged") {
             if (tonkPlayer.proximity.nearby_players && tonkPlayer.proximity.nearby_players.length != 0 && tonkPlayer.used_action == "Unused") {
                 tonkPlayer.proximity.nearby_players.forEach((p) => {
@@ -984,24 +1064,24 @@ export default async function update(params) {
             }
         } else {
             if (complete_task) {
-                await postTask(task, tonkPlayer);
+                await postTask(tonkTask, tonkPlayer);
                 complete_task = false;
             }
             if (perform_function) {
-                await postTask(task, tonkPlayer);
+                await postTask(tonkTask, tonkPlayer);
                 perform_function = false;
             }
-            if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.id == task.destination.id) >= 0 && !task.dropped_off) {
+            if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.id == tonkTask.destination.id) >= 0 && !tonkTask.dropped_off) {
                 buttons = [
                     { text: 'Download Data', type: 'action', action: performFunction, disabled: perform_function }
                 ];
             }
-            if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.id == task.second_destination.id) >= 0 && !task.dropped_off_second && task.dropped_off) {
+            if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.id == tonkTask.second_destination.id) >= 0 && !tonkTask.dropped_off_second && tonkTask.dropped_off) {
                 buttons = [
                     { text: 'Download Data', type: 'action', action: performFunction, disabled: perform_function }
                 ];
             }
-            if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.is_tower) >= 0 && !task.complete && task.dropped_off && task.dropped_off_second) {
+            if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.is_tower) >= 0 && !tonkTask.complete && tonkTask.dropped_off && tonkTask.dropped_off_second) {
                 buttons = [
                     { text: 'Upload Data', type: 'action', action: completeTask, disabled: complete_task }
                 ];
@@ -1011,11 +1091,16 @@ export default async function update(params) {
 
     if (game.status === "VoteResult") {
         let result = await getResult();
+        lastRoundResult = result;
         playerEliminated = result.eliminated && result.eliminated.findIndex(p => p.player.id == tonkPlayer.id) >= 0;
     }
 
     if (game.status === "Vote") {
         lastRoundResult = await getLastRoundResult(game);
+    }
+
+    if (game.status === "End") {
+        lastRoundResult = await getResult();
     }
 
     return {
@@ -1032,10 +1117,10 @@ export default async function update(params) {
                         <div style="${inlineStyle(containerStyle)}">
                             ${renderDefault(
                                 game.time.timer, 
-                                gameStatusText(status),
+                                gameStatusText(game),
                                 getRoleText(tonkPlayer.role)
                             )}
-                            ${renderRoundView(status)}
+                            ${renderRoundView(status, tonkPlayer)}
                             ${renderInformation(getInformativeText(status, tonkPlayer))}
                         </div>
                         ${renderNearbyPlayers(tonkPlayer)}

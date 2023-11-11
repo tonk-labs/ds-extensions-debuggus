@@ -33,7 +33,7 @@ export default async function update({ selected }) {
         version: 1,
         components: [
             {
-                id: 'meme-generator',
+                id: 'data-dump-east',
                 type: 'building',
                 content: [
                     {

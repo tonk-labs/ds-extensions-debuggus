@@ -8,8 +8,8 @@ let wants_to_start = false;
 let cast_vote = false;
 let saved_vote_id = null;
 
-let ENDPOINT = "http://localhost:8082"
-// let ENDPOINT = "https://ds-api.tonk.gg"
+// let ENDPOINT = "http://localhost:8082"
+let ENDPOINT = "https://ds-api.tonk.gg"
 
 async function getGame() {
     try {
@@ -177,7 +177,11 @@ function getWarningText(game, players, has_tonk) {
             return "Your crafted tonk will show you instructions. Good luck unit!"
         }
         case "Vote": {
-            return ""
+            if (tonkPlayer.used_action === "Voted") {
+                return "You have voted. Waiting for results..."
+            } else {
+                return "Select a unit to eliminate."
+            }
         }
         case "VoteResult": {
             return ""
@@ -191,10 +195,11 @@ function getWarningText(game, players, has_tonk) {
     }
 }
 
-function gameStatusText(status) {
+function gameStatusText(game) {
+    const { status, win_result } = game;
     switch(status) {
         case "Lobby": {
-            return "Waiting in the lobby";
+            return "Game has an open lobby";
         }
         case "Tasks": {
             return "Units are doing their tasks";
@@ -206,7 +211,11 @@ function gameStatusText(status) {
             return "All votes are in and counted";
         }
         case "End": {
-            return "The game is over."
+            if (win_result === "Thuggery") {
+                return "Brainwashed win"
+            } else {
+                return "Sentient win"
+            }
         }
         default: {
             return ""
@@ -558,25 +567,26 @@ const buttonStyle = {
     "color": "#FB7001",
     background: "linear-gradient(#E4E1EB,#F7F5FA 35%)",
     "font-weight": "800",
-    padding: "1.2rem 1.2rem 0 0.8rem",
+    padding: "0.5rem 1.2rem 0 0.8rem",
     "border-radius": "0.8rem",
     display: "block",
     "margin-top": "0.5rem"
 }
 
 
-export function renderVote(players) {
-
+export function renderVote(players, tonkPlayer) {
+    console.log(players);
+    console.log(tonkPlayer);
     return `
     <div style="${inlineStyle({...rowStyle, "margin-top": "25px"})}">
         <div style="${inlineStyle({...boxAndLabelStyle, display: "block"})}">
             <p style="${inlineStyle({...labelStyle, "max-width": "150px"})}">VOTE UNIT OUT</p>
-            <select style="${inlineStyle({...boxStyle, ...selectStyle})}">
-                ${players.filter(p => p.id == tonkPlayer.id || p.role == "Bugged").map(p => {
+            <select name="vote" style="${inlineStyle({...boxStyle, ...selectStyle})}">
+                ${players.filter(p => p.id !== tonkPlayer.id || p.role == "Bugged").map(p => {
                     return `
                         <option value="${p.id}">${p.display_name}</option>
                     `
-                })}
+                }).join("\n")}
             </select>
         </div>
         <div>
@@ -588,7 +598,7 @@ export function renderVote(players) {
 
 export function renderWarning(warningText) {
     return `
-    <div style="${inlineStyle({...rowStyle, "margin": "42px 0 25px 0", display: "flex", "align-items": "center", "justify-content": "center", "max-height": "220px"})}">
+    <div style="${inlineStyle({...rowStyle, "height": "auto", "margin": "42px 0 25px 0", display: "flex", "align-items": "center", "justify-content": "center", "max-height": "220px"})}">
         <p style="${inlineStyle({...warningTextStyle, "max-width": "264px"})}">${warningText}</p>
     </div>
     `
@@ -617,7 +627,7 @@ export function renderDefault(time, gameStatusText, players, eliminated) {
                     return `
                     <p style="${inlineStyle(entryStyle)}">${p.display_name}</p>
                     `
-                })}
+                }).join("\n")}
             </div>
         </div>
         <div style="${inlineStyle(boxAndLabelStyle)}">
@@ -633,7 +643,7 @@ export function renderDefault(time, gameStatusText, players, eliminated) {
                         <p style="${inlineStyle(entryStyle)}">${e.player.display_name}</p>
                         `
                     }
-                })}
+                }).join("\n")}
             </div>
         </div>
     </div>
@@ -682,6 +692,7 @@ export default async function update(params) {
 
     game = await getGame();
     players = await getPlayers(game.id, player.id);
+    tonkPlayer = await getPlayer(player.id);
 
     if (wants_to_join) {
         try {
@@ -738,6 +749,8 @@ export default async function update(params) {
     // } 
 
     const warningText = getWarningText(game, players, has_tonk);
+    let time = game.status == "Vote" ? "N/A" : game.time.timer;
+    let cannotVote = tonkPlayer.eliminated;
 
     return {
         version: 1,
@@ -751,8 +764,9 @@ export default async function update(params) {
                         type: 'inline',
                         html: `
                         <div style="${inlineStyle(containerStyle)}">
-                            ${renderDefault(game.time.timer, gameStatusText(game.status), players, game.eliminated || [])}
-                            ${warningText === "" ? "" : renderWarning(warningText)}
+                            ${renderDefault(time, gameStatusText(game), players, game.eliminated_players || [])}
+                            ${(game.status === "Vote" && tonkPlayer.used_action !== "Voted" && !cannotVote) ? renderVote(players, tonkPlayer) : ""}
+                            ${renderWarning(warningText)}
                         </div>
                         `,
                         buttons,
