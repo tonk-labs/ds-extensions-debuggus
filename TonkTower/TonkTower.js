@@ -8,8 +8,8 @@ let wants_to_start = false;
 let cast_vote = false;
 let saved_vote_id = null;
 
-// let ENDPOINT = "http://localhost:8082"
-let ENDPOINT = "https://ds-api.tonk.gg"
+let ENDPOINT = "http://localhost:8082"
+// let ENDPOINT = "https://ds-api.tonk.gg"
 
 async function getGame() {
     try {
@@ -174,7 +174,7 @@ function getWarningText(game, players, has_tonk) {
             }
         }
         case "Tasks": {
-            return "Your crafted tonk will show you instructions. Good luck unit!"
+            return "Your crafted tonk will show you instructions."
         }
         case "Vote": {
             if (tonkPlayer.used_action === "Voted") {
@@ -199,22 +199,22 @@ function gameStatusText(game) {
     const { status, win_result } = game;
     switch(status) {
         case "Lobby": {
-            return "Game has an open lobby";
+            return "We are actively looking for new units to enlist.";
         }
         case "Tasks": {
-            return "Units are doing their tasks";
+            return "Our units are on active duty. Good luck units!";
         }
         case "Vote": {
-            return "Voting is in session";
+            return "We are deliberating certain internal problems.";
         }
         case "VoteResult": {
-            return "All votes are in and counted";
+            return "We have concluded all deliberations.";
         }
         case "End": {
             if (win_result === "Thuggery") {
-                return "Brainwashed win"
+                return "The Brainwashed have taken over."
             } else {
-                return "Sentient win"
+                return "The Sentient have landed a major victory."
             }
         }
         default: {
@@ -573,6 +573,53 @@ const buttonStyle = {
     "margin-top": "0.5rem"
 }
 
+const screenContainerStyle = {
+    "min-width": "80px",
+    "max-width": "80px",
+    "min-height": "75px",
+    "max-height": "75px",
+    "border-radius": "5px",
+    overflow: "hidden",
+    background: "black",
+    position: "relative",
+    margin: "32px 0 0 10px",
+}
+
+const screenGradientStyle = {
+    "min-width": "80px",
+    "max-width": "80px",
+    "min-height": "75px",
+    "max-height": "75px",
+    position: "absolute",
+    background: "linear-gradient(180deg, rgba(255, 255, 255, 0.12) 5.22%, rgba(255, 255, 255, 0.08) 14.06%, rgba(255, 255, 255, 0.00) 100%)"
+}
+
+const lowerGlareStyle = {
+    position: "absolute",
+    top: "41px",
+    transform: "rotate(180deg)",
+    "min-width": "80px",
+    "max-width": "80px",
+    height: "34px",
+    "max-height": "34px",
+    background: "linear-gradient(180deg, rgba(255, 255, 255, 0.30) 5.22%, rgba(255, 255, 255, 0.23) 21.88%, rgba(255, 255, 255, 0.00) 100%)",
+    filter: "blur(7px)",
+}
+const upperGlareStyle = {
+    "min-width": "80px",
+    "max-width": "80px",
+    height: "34px",
+    "max-height": "34px",
+    background: "linear-gradient(180deg, rgba(255, 255, 255, 0.30) 5.22%, rgba(255, 255, 255, 0.23) 21.88%, rgba(255, 255, 255, 0.00) 100%)",
+    filter: "blur(7px)",
+}
+
+const logoStyle = {
+    width: "80px",
+    top: 0,
+    position: "absolute",
+}
+
 
 export function renderVote(players, tonkPlayer) {
     console.log(players);
@@ -582,7 +629,7 @@ export function renderVote(players, tonkPlayer) {
         <div style="${inlineStyle({...boxAndLabelStyle, display: "block"})}">
             <p style="${inlineStyle({...labelStyle, "max-width": "150px"})}">VOTE UNIT OUT</p>
             <select name="vote" style="${inlineStyle({...boxStyle, ...selectStyle})}">
-                ${players.filter(p => p.id !== tonkPlayer.id || p.role == "Bugged").map(p => {
+                ${players.filter(p => p.id !== tonkPlayer.id && p.role !== "Bugged").map(p => {
                     return `
                         <option value="${p.id}">${p.display_name}</option>
                     `
@@ -607,16 +654,16 @@ export function renderDefault(time, gameStatusText, players, eliminated) {
     return `
     <div style="${inlineStyle({...rowStyle, display: "flex"})}">
         <div style="${inlineStyle(boxAndLabelStyle)}">
-            <p style="${inlineStyle(labelStyle)}">GAME STATUS</p>
+            <p style="${inlineStyle(labelStyle)}">ANNOUNCEMENTS</p>
             <div style="${inlineStyle({...boxStyle, ...statusStyle})}"> 
                 <p style="${inlineStyle(entryStyle)}">${gameStatusText}</p>
             </div>
         </div>
-        <div style="${inlineStyle({...boxAndLabelStyle, transform: "translateY(0)"})}">
-            <p style="${inlineStyle(labelStyle)}">TIME (sec)</p>
-            <div style="${inlineStyle({...boxStyle, ...timeStyle})}"> 
-                <p style="${inlineStyle(timeTextStyle)}">${time}</p>
-            </div>
+        <div style="${inlineStyle(screenContainerStyle)}">
+            <img src="https://d19un6ckffnywj.cloudfront.net/beaver-head-blkbg.gif" style="${inlineStyle(logoStyle)}" />
+            <div style="${inlineStyle(screenGradientStyle)}"></div>
+            <div style="${inlineStyle(upperGlareStyle)}"></div>
+            <div style="${inlineStyle(lowerGlareStyle)}"></div>
         </div>
     </div>
     <div style="${inlineStyle(rowStyle)}">
@@ -750,7 +797,7 @@ export default async function update(params) {
 
     const warningText = getWarningText(game, players, has_tonk);
     let time = game.status == "Vote" ? "N/A" : game.time.timer;
-    let cannotVote = tonkPlayer.eliminated;
+    let showVote = game.status === "Vote" && !tonkPlayer.eliminated && tonkPlayer.used_action !== "Voted";
 
     return {
         version: 1,
@@ -765,7 +812,7 @@ export default async function update(params) {
                         html: `
                         <div style="${inlineStyle(containerStyle)}">
                             ${renderDefault(time, gameStatusText(game), players, game.eliminated_players || [])}
-                            ${(game.status === "Vote" && tonkPlayer.used_action !== "Voted" && !cannotVote) ? renderVote(players, tonkPlayer) : ""}
+                            ${showVote ? renderVote(players, tonkPlayer) : ""}
                             ${renderWarning(warningText)}
                         </div>
                         `,

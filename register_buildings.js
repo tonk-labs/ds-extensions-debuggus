@@ -81,7 +81,7 @@ async function register_all_local() {
     ])
 }
 
-register_all()
-// register_all_local();
+// register_all()
+register_all_local();
 
 

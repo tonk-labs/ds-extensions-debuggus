@@ -8,8 +8,8 @@ let perform_function = false;
 let first_click_in = true;
 let confirmed = false;
 
-// let ENDPOINT = "http://localhost:8082"
-let ENDPOINT = "https://ds-api.tonk.gg"
+let ENDPOINT = "http://localhost:8082"
+// let ENDPOINT = "https://ds-api.tonk.gg"
 
 async function getGame() {
     try {
@@ -201,6 +201,7 @@ function getInformativeText(status, tonkPlayer) {
                     return "Follow the directions. When you are next to the building a button will appear below."
                 }
             }
+            return ""
         }
         case "Vote": {
             return "Make your way to the compute center to vote out the Brainwashed units!"
@@ -251,7 +252,7 @@ function gameStatusText(game) {
     }
 }
 
-function getRoleText(role) {
+function getRoleText(role, has_joined) {
     switch(role) {
         case "Bugged": {
             return "Brainwashed Unit"
@@ -260,7 +261,11 @@ function getRoleText(role) {
             return "Sentient Unit"
         }
         default: {
-            return "...ROLE..PENDING..."
+            if (has_joined) {
+                return "████████ Unit"
+            } else {
+                return "Spectator Unit"
+            }
         }
     }
 }
@@ -463,194 +468,57 @@ function showNotification(proximity) {
     `
 }
 
-// export default async function update(params) {
-//     const { selected, player } = params;
-//     const { mobileUnit } = selected || {};
-
-//     game = await getGame();
-//     tonkPlayer = await getPlayer(player.id);
-
-//     let task = "";
-//     let buttons = [];
-
-//     const bugOut = (id, displayName) => {
-//         bugging = true;
-//         player_to_bug = {
-//             id,
-//             display_name: displayName,
-//         }
-//     }
-
-//     const confirmBug = () => {
-//         bugging = true;
-//         confirmed = true;
-//         player_to_bug = {
-//             id: tonkPlayer.id,
-//             display_name: "fake"
-//         };
-//     }
-
-//     const completeTask = () => {
-//         complete_task = true;
-//     }
-
-//     const performFunction = () => {
-//         perform_function = true;
-//     }
-
-//     if (bugging) {
-//         await postAction(player_to_bug, game, tonkPlayer, confirmed);
-//         bugging = false;
-//         player_to_bug = null;
-//         confirmed = false;
-//     }
-
-//     let players = await getPlayers(game.id, player.id);
-//     let has_joined = isInGame(players, player.id);
-//     let status = has_joined ? game.status : "SPECTATOR";
-//     let lastRoundResult = null;
-
-//     let nameField = mobileUnit.name || { value: `UNIT ${mobileUnit.key.replace("0x", "").toUpperCase()}`}
-//     if (!tonkPlayer || tonkPlayer.id == "" || first_click_in) {
-//         await registerPlayer(player.id, mobileUnit.id, nameField.value);
-//         first_click_in = false;
-//     } else if (tonkPlayer.display_name != nameField.value) {
-//         await registerPlayer(player.id, mobileUnit.id, nameField.value);
-//     }
-
-//     let playerEliminated = false;
-//     if (status == "VoteResult") {
-//         let result = await getResult();
-//         playerEliminated = result.eliminated && result.eliminated.findIndex(p => p.player.id == tonkPlayer.id) >= 0;
-//     }
-
-//     status = tonkPlayer.eliminated || playerEliminated ? "ELIMINATED" : status;
-
-//     if (status == "Tasks") {
-//         buttons = [];
-//         task = await getTask(tonkPlayer);
-//         if (tonkPlayer.role == "Bugged") {
-//             if (tonkPlayer.proximity.nearby_players && tonkPlayer.proximity.nearby_players.length != 0 && tonkPlayer.used_action == "Unused") {
-//                 tonkPlayer.proximity.nearby_players.forEach((p) => {
-//                     if (!p.proximity.immune && p.role !== "Bugged") {
-//                         buttons.push(
-//                             { text: `Bug ${p.display_name}`, type: 'action', action: bugOut.bind(this, p.id, p.display_name), disabled: false }
-//                         )
-//                     }
-//                 });
-//             }
-//             let isNearTower = tonkPlayer.proximity && tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.filter(b => b.is_tower).length > 0
-//             if (tonkPlayer.used_action == "ReturnToTower" && isNearTower) {
-//                 buttons = [
-//                     {
-//                         text: `Confirm Attack`,
-//                         type: 'action',
-//                         action: confirmBug.bind(this), 
-//                         disabled: false
-//                 }];
-//             }
-//         } else {
-//             if (complete_task) {
-//                 await postTask(task, tonkPlayer);
-//                 complete_task = false;
-//             }
-//             if (perform_function) {
-//                 await postTask(task, tonkPlayer);
-//                 perform_function = false;
-//             }
-//             if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.id == task.destination.id) >= 0 && !task.dropped_off) {
-//                 buttons = [
-//                     { text: 'Perform function', type: 'action', action: performFunction, disabled: perform_function }
-//                 ];
-//             }
-//             if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.id == task.second_destination.id) >= 0 && !task.dropped_off_second && task.dropped_off) {
-//                 buttons = [
-//                     { text: 'Perform function', type: 'action', action: performFunction, disabled: perform_function }
-//                 ];
-//             }
-//             if (tonkPlayer.proximity.nearby_buildings && tonkPlayer.proximity.nearby_buildings.findIndex((b) => b.is_tower) >= 0 && !task.complete && task.dropped_off && task.dropped_off_second) {
-//                 buttons = [
-//                     { text: 'Complete task', type: 'action', action: completeTask, disabled: complete_task }
-//                 ];
-//             }
-//         }
-//     }
-
-//     if (status == "Vote") {
-//         lastRoundResult = await getLastRoundResult(game);
-//     }
-
-//     return {
-//         version: 1,
-//         components: [
-//             {
-//                 id: 'tonk',
-//                 type: 'item',
-//                 content: [
-//                     {
-//                         id: 'default',
-//                         type: 'inline',
-//                         html: `
-//                             ${formatHtml(status, game, tonkPlayer, players, task, lastRoundResult)}
-//                             ${showNotification(tonkPlayer.proximity)}
-//                         `,
-//                         buttons
-//                     },
-//                 ],
-//             },
-//         ],
-//     };
-// }
-
 const containerStyle = {
     width: "100%",
 }
 
 const screenContainerStyle = {
-    width: "260px",
-    "max-width": "260px",
-    height: "123px",
-    "max-height": "123px",
-    "border-radius": "15px",
+    width: "255px",
+    "max-width": "255px",
+    height: "118px",
+    "max-height": "118px",
+    "border-radius": "12px",
     overflow: "hidden",
     background: "black",
     position: "absolute",
+    "margin-left": "1px"
 }
 
 const miniScreenContainerStyle = {
-    width: "260px",
-    "max-width": "260px",
+    width: "253px",
+    "max-width": "253px",
     height: "53px",
+    "margin-left": "1px",
     "max-height": "53px",
-    "border-radius": "15px",
+    "border-radius": "5px",
     overflow: "hidden",
     background: "black",
     position: "absolute",
   }
 
 const screenGradientStyle = {
-    width: "260px",
-    "max-width": "260px",
-    height: "128px",
-    "max-height": "128px",
+    width: "253px",
+    "max-width": "253px",
+    height: "118px",
+    "max-height": "118px",
     position: "absolute",
     background: "linear-gradient(180deg, rgba(255, 255, 255, 0.50) 5.22%, rgba(255, 255, 255, 0.38) 14.06%, rgba(255, 255, 255, 0.00) 100%)"
 }
 
 const lowerGlareStyle = {
     position: "absolute",
-    top: "94px",
+    top: "81px",
     transform: "rotate(180deg)",
-    width: "250px",
-    "max-width": "250px",
+    width: "253px",
+    "max-width": "253px",
     height: "34px",
     "max-height": "34px",
     background: "linear-gradient(180deg, rgba(255, 255, 255, 0.30) 5.22%, rgba(255, 255, 255, 0.23) 21.88%, rgba(255, 255, 255, 0.00) 100%)",
     filter: "blur(7px)",
 }
 const upperGlareStyle = {
-    width: "250px",
-    "max-width": "250px",
+    width: "253px",
+    "max-width": "253px",
     height: "34px",
     "max-height": "34px",
     background: "linear-gradient(180deg, rgba(255, 255, 255, 0.30) 5.22%, rgba(255, 255, 255, 0.23) 21.88%, rgba(255, 255, 255, 0.00) 100%)",
@@ -658,10 +526,10 @@ const upperGlareStyle = {
 }
 
 const logoStyle = {
-    width: "260px",
+    width: "253px",
     position: "absolute",
     top: "2px",
-    left: "1px",
+    left: "0px",
 }
 
 const screenRow = {
@@ -730,6 +598,13 @@ const boxStyle = {
     border: "1px solid #A7A3AF",
     "box-shadow": "-1px -1px 0px 0px #EDEBF6",
     margin: "5px",
+}
+
+const timeBoxStyle = {
+    display: "inline-block",
+    "border-radius": "5px",
+    background: "#EDEBF6",
+    border: "3px solid black",
 }
 
 const statusStyle = {
@@ -813,6 +688,18 @@ const colorPink = {
 }
 const colorBlue = {
     color: "#2DAEE0"
+}
+
+const blackBackgroundStyle = {
+    display: "block",
+    width: "260px",
+    height: "200px",
+    position: "absolute",
+    background: "black",
+    "border-radius": "14px",
+    top: "-2px",
+    left: "-3px",
+    "z-index": "-1",
 }
 
 function renderNearbyPlayers(tonkPlayer) {
@@ -928,7 +815,7 @@ function getColorForBug() {
     } else if (tonkPlayer.used_action === "TaskComplete") {
         return colorOrange.color; 
     } else {
-        return "#EC5C61";
+        return "#F00";
     }
 }
 
@@ -949,7 +836,9 @@ function renderDirections(depotText) {
 
 function renderDefault(time, gameStatusText, roleText) {
     return `
-<div style="${inlineStyle({...screenRow, transform: "translateY(-176px)"})}">
+<div style="${inlineStyle({...blackBackgroundStyle, transform: "translateY(-175px)"})}">
+</div>
+<div style="${inlineStyle({...screenRow, transform: "translateY(-174px)"})}">
     <div style="${inlineStyle(screenContainerStyle)}">
         <div style="${inlineStyle(screenGradientStyle)}"></div>
         <div style="${inlineStyle(upperGlareStyle)}"></div>
@@ -957,7 +846,7 @@ function renderDefault(time, gameStatusText, roleText) {
         <img src="https://d19un6ckffnywj.cloudfront.net/tonk-attack-transparent-logo.gif" style="${inlineStyle(logoStyle)}" />
     </div>
 </div>
-<div style="${inlineStyle({...screenRow, transform: "translateY(-53px)", height: "53px"})}">
+<div style="${inlineStyle({...screenRow, transform: "translateY(-55px)", height: "53px"})}">
     <div style="${inlineStyle(miniScreenContainerStyle)}">
         <div style="${inlineStyle({...screenGradientStyle, ...miniGradient})}"></div>
         <div style="${inlineStyle({...upperGlareStyle, ...miniGlare })}"></div>
@@ -965,10 +854,10 @@ function renderDefault(time, gameStatusText, roleText) {
         <p style="${inlineStyle({...bigTextStyle, ...roleTextStyle})}">${roleText}</p>
     </div>
 </div>
-<div style="${inlineStyle({...screenRow, transform: "translate(254px, 1px)", height: "106px"})}">
+<div style="${inlineStyle({...screenRow, transform: "translate(255px, 24px)", height: "106px", width: "auto"})}">
     <div style="${inlineStyle({...boxAndLabelStyle, transform: "translateY(0)"})}">
-        <p style="${inlineStyle({...labelStyle, ...boxStyle, display: "block", margin: 0})}">TIME (sec)</p>
-        <div style="${inlineStyle({...boxStyle, ...timeStyle, margin: "0"})}"> 
+        <p style="${inlineStyle({...labelStyle, ...timeBoxStyle, display: "block", margin: "0 0 -3px 0", "text-align": "center"})}">TIME</p>
+        <div style="${inlineStyle({...timeBoxStyle, ...timeStyle, margin: "0"})}"> 
             <p style="${inlineStyle(timeTextStyle)}">${time}</p>
         </div>
     </div>
@@ -1118,7 +1007,7 @@ export default async function update(params) {
                             ${renderDefault(
                                 game.time.timer, 
                                 gameStatusText(game),
-                                getRoleText(tonkPlayer.role)
+                                getRoleText(tonkPlayer.role, has_joined)
                             )}
                             ${renderRoundView(status, tonkPlayer)}
                             ${renderInformation(getInformativeText(status, tonkPlayer))}
