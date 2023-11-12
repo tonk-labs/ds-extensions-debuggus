@@ -525,6 +525,10 @@ const upperGlareStyle = {
     filter: "blur(7px)",
 }
 
+const miniUpperGlareStyle = {
+    background: "linear-gradient(180deg, rgba(255, 255, 255, 0.50) 5.22%, rgba(255, 255, 255, 0.23) 21.88%, rgba(255, 255, 255, 0.00) 100%)"
+}
+
 const logoStyle = {
     width: "253px",
     position: "absolute",
@@ -544,6 +548,7 @@ const screenRow = {
 const miniGradient = {
     height: "53px",
     "max-height": "53px",
+    background: "linear-gradient(180deg, rgba(255, 255, 255, 0.25) 5.22%, rgba(255, 255, 255, 0.18) 14.06%, rgba(255, 255, 255, 0.00) 100%)"
 }
 
 const miniGlare = {
@@ -849,7 +854,7 @@ function renderDefault(time, gameStatusText, roleText) {
 <div style="${inlineStyle({...screenRow, transform: "translateY(-55px)", height: "53px"})}">
     <div style="${inlineStyle(miniScreenContainerStyle)}">
         <div style="${inlineStyle({...screenGradientStyle, ...miniGradient})}"></div>
-        <div style="${inlineStyle({...upperGlareStyle, ...miniGlare })}"></div>
+        <div style="${inlineStyle({...upperGlareStyle, ...miniGlare, ...miniUpperGlareStyle })}"></div>
         <div style="${inlineStyle({...lowerGlareStyle, ...miniGlare, top: "36px" })}"></div>
         <p style="${inlineStyle({...bigTextStyle, ...roleTextStyle})}">${roleText}</p>
     </div>
