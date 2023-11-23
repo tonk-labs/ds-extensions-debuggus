@@ -1,6 +1,6 @@
 # ds-extensions-debuggus
 
-This repo contains the Downstream extensions for Debuggus, the social deduction game built in Downstream.
+This repo contains the Downstream extensions for Tonk Attack, the social deduction game built in Downstream.
 
 ### Includes
 
