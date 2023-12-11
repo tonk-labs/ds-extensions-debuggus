@@ -34,7 +34,7 @@ export default async function update({ selected }) {
         version: 1,
         components: [
             {
-                id: 'selfie-point',
+                id: 'data-dump-west',
                 type: 'building',
                 content: [
                     {

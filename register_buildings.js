@@ -30,22 +30,22 @@ async function register_building(id, readable_id, is_tower, message, location) {
 
 }
 
-const HEX_DUMP_MESSAGE = "Pick up a big pile of garbage data at the Hex Dump"
-const MEME_GEN_MESSAGE = "Prepare your steamed hams at the Meme Generator"
-const SELFIE_POINT_MESSAGE = "Find your best angle at Selfie Point"
+const HEX_DUMP_MESSAGE = "Download garbage data"
+const MEME_GEN_MESSAGE = "Download steamed hams"
+const SELFIE_POINT_MESSAGE = "Download vacation selfies"
 
 async function register_all() {
     activeEndpoint = "prod"
-    await register_building("0x34cf8a7e000000000000000000000000000000010000ffff", "TOWER", true, "", [
+    await register_building("0x34cf8a7e000000000000000000000000000000010000ffff", "COMPUTE CENTER", true, "", [
          '0x0', '0x01', '0x0', '0xffff'
     ])
-    await register_building("0x34cf8a7e0000000000000000000000000000fff9000afffd", "HEX_DUMP", false, HEX_DUMP_MESSAGE, [
+    await register_building("0x34cf8a7e0000000000000000000000000000fff9000afffd", "DATA DUMP NORTH", false, HEX_DUMP_MESSAGE, [
         '0x0', '0xfff9', '0x0a', '0xfffd'
     ])
-    await register_building("0x34cf8a7e000000000000000000000000000000090002fff5", "MEME_GEN", false, MEME_GEN_MESSAGE, [
+    await register_building("0x34cf8a7e000000000000000000000000000000090002fff5", "DATA DUMP EAST", false, MEME_GEN_MESSAGE, [
         '0x0', '0x09', '0x02', '0xfff5'
     ])
-    await register_building("0x34cf8a7e0000000000000000000000000000fff400030009", "SELFIE_POINT", false, SELFIE_POINT_MESSAGE, [
+    await register_building("0x34cf8a7e0000000000000000000000000000fff400030009", "DATA DUMP WEST", false, SELFIE_POINT_MESSAGE, [
         '0x0', '0xfff4', '0x03', '0x09'
     ])
 }
@@ -67,21 +67,21 @@ async function register_all() {
 
 async function register_all_local() {
     activeEndpoint = "local"
-    await register_building("0x34cf8a7e000000000000000000000000000000010000ffff", "TOWER", true, "", [
+    await register_building("0x34cf8a7e000000000000000000000000000000010000ffff", "COMPUTE CENTER", true, "", [
         '0x0', '0x01', '0x0', '0xffff'
     ])
-    await register_building("0x34cf8a7e0000000000000000000000000000fff9000afffd", "HEX_DUMP", false, HEX_DUMP_MESSAGE, [
+    await register_building("0x34cf8a7e0000000000000000000000000000fff9000afffd", "DATA DUMP NORTH", false, HEX_DUMP_MESSAGE, [
         '0x0', '0xfff9', '0x0a', '0xfffd'
     ])
-    await register_building("0x34cf8a7e000000000000000000000000000000050002fff9", "MEME_GEN", false, MEME_GEN_MESSAGE, [
+    await register_building("0x34cf8a7e000000000000000000000000000000050002fff9", "DATA DUMP EAST", false, MEME_GEN_MESSAGE, [
         '0x0', '0x05', '0x02', '0xfff9'
     ])
-    await register_building("0x34cf8a7e0000000000000000000000000000fffbfffe0007", "SELFIE_POINT", false, SELFIE_POINT_MESSAGE, [
+    await register_building("0x34cf8a7e0000000000000000000000000000fffbfffe0007", "DATA DUMP WEST", false, SELFIE_POINT_MESSAGE, [
         '0x0', '0xfffb', '0xfffe', '0x07'
     ])
 }
 
-register_all()
-// register_all_local();
+// register_all()
+register_all_local();
 
 

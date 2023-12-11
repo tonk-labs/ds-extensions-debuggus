@@ -1,23 +1,23 @@
 ---
 kind: Building
 spec:
-  name: Tonk Tower
+  name: Tonk Compute Center
   location: [1, 0, -1]
 
 ---
 kind: Building
 spec:
-  name: Meme Generator 
+  name: Data Dump East
   location: [5, 2, -7]
 
 ---
 kind: Building
 spec:
-  name: Selfie Point 
+  name: Data Dump West
   location: [-4, -3, 7]
 
 ---
 kind: Building
 spec:
-  name: Hex Dump 
+  name: Data Dump North
   location: [-8, 10, -2]

@@ -1,10 +1,10 @@
 kind: BuildingKind
 spec:
-  name: Meme Generator
-  description: "TonkAttack: you wouldn't steam a ham"
+  name: Data Dump East 
+  description: "TonkAttack: You wouldn't steam a ham"
   category: factory
   model: 04-17
-  color: 4
+  color: 1
   contract:
     file: ./MemeGenerator.sol
   plugin:

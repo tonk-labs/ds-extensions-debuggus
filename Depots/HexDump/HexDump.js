@@ -33,7 +33,7 @@ export default async function update({ selected }) {
         version: 1,
         components: [
             {
-                id: 'hex-dump',
+                id: 'data-dump-north',
                 type: 'building',
                 content: [
                     {

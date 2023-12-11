@@ -1,6 +1,6 @@
 kind: BuildingKind
 spec:
-  name: Hex Dump
+  name: Data Dump North
   description: "TonkAttack: a monstrous pile of worthless hex codes"
   category: factory
   model: 05-10
