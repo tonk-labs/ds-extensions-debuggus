@@ -8,8 +8,8 @@ let perform_function = false;
 let first_click_in = true;
 let confirmed = false;
 
-let ENDPOINT = "http://localhost:8082"
-// let ENDPOINT = "https://ds-api.tonk.gg"
+// let ENDPOINT = "http://localhost:8082"
+let ENDPOINT = "https://ds-api.tonk.gg"
 
 async function getGame() {
     try {

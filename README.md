@@ -18,3 +18,18 @@ This repo contains the Downstream extensions for Tonk Attack, the social deducti
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Players must craft a Tonk item for themselves if they wish to play the game.
 
 
+### How to Install and Run
+
+#### Install Playmint DS
+In a folder above wherever this directory exists run
+```git clone https://github.com/playmint/ds ``` 
+
+Follow the instructions to build playmint ds
+
+
+#### Deploy the contracts
+npx ds -n [server] -k [private_key] apply -R -f [root_dir]
+
+
+#### Running Locally
+If you want to play everything on your local computer, you will need to have an instance of DownStream and Tonk Services https://github.com/tonk-gg/tonk-services running locally on your machine.

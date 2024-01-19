@@ -7,8 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
-    "@playmint/ds-cli": "^0.0.11"
+    "@playmint/ds-cli": "../ds/cli"
   }
 }

@@ -8,8 +8,8 @@ let wants_to_start = false;
 let cast_vote = false;
 let saved_vote_id = null;
 
-let ENDPOINT = "http://localhost:8082"
-// let ENDPOINT = "https://ds-api.tonk.gg"
+// let ENDPOINT = "http://localhost:8082"
+let ENDPOINT = "https://ds-api.tonk.gg"
 
 async function getGame() {
     try {

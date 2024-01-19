@@ -36,8 +36,8 @@ const SELFIE_POINT_MESSAGE = "Download vacation selfies"
 
 async function register_all() {
     activeEndpoint = "prod"
-    await register_building("0x34cf8a7e000000000000000000000000000000010000ffff", "COMPUTE CENTER", true, "", [
-         '0x0', '0x01', '0x0', '0xffff'
+    await register_building("0x34cf8a7e000000000000000000000000000000000001ffff", "COMPUTE CENTER", true, "", [
+         '0x0', '0x0', '0x01', '0xffff'
     ])
     await register_building("0x34cf8a7e0000000000000000000000000000fff9000afffd", "DATA DUMP NORTH", false, HEX_DUMP_MESSAGE, [
         '0x0', '0xfff9', '0x0a', '0xfffd'
@@ -81,7 +81,7 @@ async function register_all_local() {
     ])
 }
 
-// register_all()
-register_all_local();
+register_all()
+// register_all_local();
 
 
